@@ -1,15 +1,19 @@
+// MODULES
 const fs = require('fs');
 const express = require('express');
 
+// EXPRESS
 const app = express();
-
+// MIDDLEWARE
 app.use(express.json());
 
+// READ TOUR DATA FROM FILE
 const tourData = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
 );
 
-app.get('/api/v1/tours', (request, response) => {
+// CALLBACK FUNCTIONS
+const getAllTours = (request, response) => {
   response.status(200).json({
     status: 'success',
     results: tourData.length,
@@ -17,9 +21,9 @@ app.get('/api/v1/tours', (request, response) => {
       tours: tourData,
     },
   });
-});
+};
 
-app.get('/api/v1/tours/:id', (request, response) => {
+const getSpecificTour = (request, response) => {
   const ID = request.params.id * 1;
   const tour = tourData.find((tour) => tour.id === ID);
 
@@ -36,9 +40,9 @@ app.get('/api/v1/tours/:id', (request, response) => {
       },
     });
   }
-});
+};
 
-app.post('/api/v1/tours', (request, response) => {
+const createTour = (request, response) => {
   const newID = tourData[tourData.length - 1].id + 1;
   const newTour = Object.assign({ id: newID }, request.body);
 
@@ -60,9 +64,9 @@ app.post('/api/v1/tours', (request, response) => {
       });
     }
   );
-});
+};
 
-app.patch('/api/v1/tours/:id', (request, response) => {
+const updateTour = (request, response) => {
   const ID = request.params.id * 1;
   const tour = tourData.find((tour) => tour.id === ID);
 
@@ -79,9 +83,9 @@ app.patch('/api/v1/tours/:id', (request, response) => {
       },
     });
   }
-});
+};
 
-app.delete('/api/v1/tours/:id', (request, response) => {
+const deleteTour = (request, response) => {
   const ID = request.params.id * 1;
   const tour = tourData.find((tour) => tour.id === ID);
 
@@ -96,8 +100,17 @@ app.delete('/api/v1/tours/:id', (request, response) => {
       data: null,
     });
   }
-});
+};
 
+// ROUTING
+app.route('/api/v1/tours').get(getAllTours).post(createTour);
+app
+  .route('/api/v1/tours/:id')
+  .get(getSpecificTour)
+  .patch(updateTour)
+  .delete(deleteTour);
+
+// SERVER LISTENING
 const port = 3000;
 app.listen(port, () => {
   console.log(`App running on port ${port}...`);
