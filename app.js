@@ -3,15 +3,7 @@ const express = require('express');
 
 const app = express();
 
-// app.get('/', (request, response) => {
-//   response
-//     .status(200)
-//     .json({ string: 'Hello from the server side!', app: 'Natours' });
-// });
-
-// app.post('/', (request, response) => {
-//   response.send('You can post to this URL');
-// });
+app.use(express.json());
 
 const tourData = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
@@ -25,6 +17,30 @@ app.get('/api/v1/tours', (request, response) => {
       tours: tourData,
     },
   });
+});
+
+app.post('/api/v1/tours', (request, response) => {
+  const newID = tourData[tourData.length - 1].id + 1;
+  const newTour = Object.assign({ id: newID }, request.body);
+
+  tourData.push(newTour);
+
+  fs.writeFile(
+    `${__dirname}/dev-data/data/tours-simple.json`,
+    JSON.stringify(tourData),
+    (error) => {
+      if (error)
+        return response.status(404).json({
+          status: 'error',
+        });
+      response.status(201).json({
+        status: 'success',
+        data: {
+          tour: newTour,
+        },
+      });
+    }
+  );
 });
 
 const port = 3000;
