@@ -1,11 +1,22 @@
 // MODULES
 const fs = require('fs');
 const express = require('express');
+const { request } = require('express');
 
 // EXPRESS
 const app = express();
+
 // MIDDLEWARE
 app.use(express.json());
+app.use((request, response, next) => {
+  console.log('Hello from the middleware!');
+  next();
+});
+
+app.use((request, response, next) => {
+  request.requestTime = new Date().toISOString();
+  next();
+});
 
 // READ TOUR DATA FROM FILE
 const tourData = JSON.parse(
@@ -16,6 +27,7 @@ const tourData = JSON.parse(
 const getAllTours = (request, response) => {
   response.status(200).json({
     status: 'success',
+    requestedAt: request.requestTime,
     results: tourData.length,
     data: {
       tours: tourData,
@@ -30,11 +42,13 @@ const getSpecificTour = (request, response) => {
   if (!tour) {
     response.status(404).json({
       status: 'fail',
+      requestedAt: request.requestTime,
       message: 'invalid ID',
     });
   } else {
     response.status(200).json({
       status: 'success',
+      requestedAt: request.requestTime,
       data: {
         tour,
       },
@@ -54,10 +68,13 @@ const createTour = (request, response) => {
     (error) => {
       if (error)
         return response.status(404).json({
-          status: 'error',
+          status: 'fail',
+          requestedAt: request.requestTime,
+          message: 'invalid ID',
         });
       response.status(201).json({
         status: 'success',
+        createdAt: request.requestTime,
         data: {
           tour: newTour,
         },
@@ -73,11 +90,13 @@ const updateTour = (request, response) => {
   if (!tour) {
     response.status(404).json({
       status: 'fail',
+      requestedAt: request.requestTime,
       message: 'invalid ID',
     });
   } else {
     response.status(200).json({
       status: 'success',
+      updatedAt: request.requestTime,
       data: {
         tour,
       },
@@ -92,11 +111,13 @@ const deleteTour = (request, response) => {
   if (!tour) {
     response.status(404).json({
       status: 'fail',
+      requestedAt: request.requestTime,
       message: 'invalid ID',
     });
   } else {
     response.status(204).json({
       status: 'success',
+      deletedAt: request.requestTime,
       data: null,
     });
   }
