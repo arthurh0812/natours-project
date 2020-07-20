@@ -1,6 +1,6 @@
 // MODULES
 const express = require('express');
-const tourController = require('./../controllers/tourController');
+const tourController = require('../controllers/tourController');
 
 // 1.) CREATE ROUTER
 const router = express.Router();

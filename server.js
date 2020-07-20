@@ -1,5 +1,6 @@
 // CONFIGURATION OF ENVIRONMENT VARIBALES
 const dotenv = require('dotenv');
+
 dotenv.config({ path: './config.env' });
 
 // MODULES

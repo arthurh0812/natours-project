@@ -100,8 +100,6 @@ exports.updateTour = (request, response) => {
 };
 
 exports.deleteTour = (request, response) => {
-  const tour = getTourById(request.params.id);
-
   response.status(204).json({
     status: 'success',
     deletedAt: request.requestTime,
