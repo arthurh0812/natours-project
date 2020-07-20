@@ -6,7 +6,25 @@ const tourData = JSON.parse(
   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 );
 
+const getTourById = (id) => {
+  return tourData.find((tour) => tour.id === id * 1);
+};
+
 // 2.) EXPORT ROUTE HANDLERS
+exports.checkID = (request, response, next, val) => {
+  console.log(`Tour ID is ${val}`);
+  const tour = getTourById(val);
+
+  if (!tour) {
+    return response.status(404).json({
+      status: 'fail',
+      requestedAt: request.requestTime,
+      message: 'invalid ID',
+    });
+  }
+  next();
+};
+
 exports.getAllTours = (request, response) => {
   response.status(200).json({
     status: 'success',
@@ -19,24 +37,15 @@ exports.getAllTours = (request, response) => {
 };
 
 exports.getSpecificTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
+  const tour = getTourById(request.params.id);
 
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(200).json({
-      status: 'success',
-      requestedAt: request.requestTime,
-      data: {
-        tour,
-      },
-    });
-  }
+  response.status(200).json({
+    status: 'success',
+    requestedAt: request.requestTime,
+    data: {
+      tour,
+    },
+  });
 };
 
 exports.createTour = (request, response) => {
@@ -67,41 +76,23 @@ exports.createTour = (request, response) => {
 };
 
 exports.updateTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
+  const tour = getTourById(request.params.id);
 
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(200).json({
-      status: 'success',
-      updatedAt: request.requestTime,
-      data: {
-        tour,
-      },
-    });
-  }
+  response.status(200).json({
+    status: 'success',
+    updatedAt: request.requestTime,
+    data: {
+      tour,
+    },
+  });
 };
 
 exports.deleteTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
+  const tour = getTourById(request.params.id);
 
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(204).json({
-      status: 'success',
-      deletedAt: request.requestTime,
-      data: null,
-    });
-  }
+  response.status(204).json({
+    status: 'success',
+    deletedAt: request.requestTime,
+    data: null,
+  });
 };
