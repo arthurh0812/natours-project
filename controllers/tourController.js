@@ -10,7 +10,7 @@ const getTourById = (id) => {
   return tourData.find((tour) => tour.id === id * 1);
 };
 
-// 2.) EXPORT ROUTE HANDLERS
+// 2.) EXPORT MIDDLEWARES
 exports.checkID = (request, response, next, val) => {
   console.log(`Tour ID is ${val}`);
   const tour = getTourById(val);
@@ -25,6 +25,18 @@ exports.checkID = (request, response, next, val) => {
   next();
 };
 
+exports.checkBody = (request, response, next) => {
+  if (!request.body.name || !request.body.price) {
+    return response.status(400).json({
+      status: 'fail',
+      requestedAt: request.requestTime,
+      message: "missing 'name' or 'price' property",
+    });
+  }
+  next();
+};
+
+// 3.) EXPORT ROUTE HANDLERS
 exports.getAllTours = (request, response) => {
   response.status(200).json({
     status: 'success',
