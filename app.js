@@ -1,7 +1,9 @@
 // MODULES
-const fs = require('fs');
 const express = require('express');
 const morgan = require('morgan');
+
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 
 // EXPRESS
 const app = express();
@@ -21,168 +23,9 @@ app.use((request, response, next) => {
   next();
 });
 
-// READ TOUR DATA FROM FILE
-const tourData = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
-);
-
-// 2.) ROUTE HANDLERS
-const getAllTours = (request, response) => {
-  response.status(200).json({
-    status: 'success',
-    requestedAt: request.requestTime,
-    results: tourData.length,
-    data: {
-      tours: tourData,
-    },
-  });
-};
-
-const getSpecificTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
-
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(200).json({
-      status: 'success',
-      requestedAt: request.requestTime,
-      data: {
-        tour,
-      },
-    });
-  }
-};
-
-const createTour = (request, response) => {
-  const newID = tourData[tourData.length - 1].id + 1;
-  const newTour = Object.assign({ id: newID }, request.body);
-
-  tourData.push(newTour);
-
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tourData),
-    (error) => {
-      if (error)
-        return response.status(404).json({
-          status: 'fail',
-          requestedAt: request.requestTime,
-          message: 'invalid ID',
-        });
-      response.status(201).json({
-        status: 'success',
-        createdAt: request.requestTime,
-        data: {
-          tour: newTour,
-        },
-      });
-    }
-  );
-};
-
-const updateTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
-
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(200).json({
-      status: 'success',
-      updatedAt: request.requestTime,
-      data: {
-        tour,
-      },
-    });
-  }
-};
-
-const deleteTour = (request, response) => {
-  const ID = request.params.id * 1;
-  const tour = tourData.find((tour) => tour.id === ID);
-
-  if (!tour) {
-    response.status(404).json({
-      status: 'fail',
-      requestedAt: request.requestTime,
-      message: 'invalid ID',
-    });
-  } else {
-    response.status(204).json({
-      status: 'success',
-      deletedAt: request.requestTime,
-      data: null,
-    });
-  }
-};
-
-const getAllUsers = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
-
-const getSpecificUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
-
-const createUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
-
-const updateUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
-
-const deleteUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
-
-// 3.) ROUTING
-const tourRouter = express.Router();
-const userRouter = express.Router();
-
+// 2.) ROUTING
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
-tourRouter.route('/').get(getAllTours).post(createTour);
-tourRouter
-  .route('/:id')
-  .get(getSpecificTour)
-  .patch(updateTour)
-  .delete(deleteTour);
-userRouter.route('/').get(getAllUsers).post(createUser);
-userRouter
-  .route('/:id')
-  .get(getSpecificUser)
-  .patch(updateUser)
-  .delete(deleteUser);
-
-// 4.) START SERVER
-const port = 3000;
-app.listen(port, () => {
-  console.log(`App running on port ${port}...`);
-});
+// 3.) EXPORTING THE EXPRESS APP
+module.exports = app;
