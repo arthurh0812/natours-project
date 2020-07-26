@@ -29,7 +29,7 @@ mongoose
   })
   .then(() => console.log(`DB connection succesful!`))
   .catch((error) => {
-    console.log(error);
+    console.log(`Error: ${error}`);
   });
 
 const tourSchema = new mongoose.Schema({
