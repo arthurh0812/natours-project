@@ -20,6 +20,7 @@ DBConnetionString = DBConnetionString.replace(
   process.env.DATABASE_NAME
 );
 
+// 1.) CONNECTING TO DATABASE
 mongoose
   .connect(DBConnetionString, {
     useUnifiedTopology: true,
@@ -32,39 +33,7 @@ mongoose
     console.log(error);
   });
 
-const tourSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'A tour must have a name'],
-    unique: true,
-  },
-  rating: {
-    type: Number,
-    default: 4.5,
-  },
-  price: {
-    type: Number,
-    required: [true, 'A tour must have a price'],
-  },
-});
-
-const Tour = mongoose.model('Tour', tourSchema);
-
-const testTour = new Tour({
-  name: 'The Park Camper',
-  price: 497,
-});
-
-testTour
-  .save()
-  .then((doc) => {
-    console.log(doc);
-  })
-  .catch((error) => {
-    console.log(error);
-  });
-
-// 1.) STARTING SERVER
+// 2.) STARTING SERVER
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`App running on port ${port}...`);

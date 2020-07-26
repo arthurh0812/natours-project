@@ -6,13 +6,13 @@ const tourController = require('../controllers/tourController');
 const router = express.Router();
 
 // 2.) MIDDLEWARES
-router.param('id', tourController.checkID);
+// router.param('id', tourController.checkID);
 
 // 3.) DEFINE AND NAVIGATE TO ROUTES
 router
   .route('/')
   .get(tourController.getAllTours)
-  .post(tourController.checkBody, tourController.createTour);
+  .post(tourController.createTour);
 router
   .route('/:id')
   .get(tourController.getSpecificTour)
