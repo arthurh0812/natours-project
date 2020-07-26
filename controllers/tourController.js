@@ -16,11 +16,24 @@ exports.getSpecificTour = (request, response) => {
   });
 };
 
-exports.createTour = (request, response) => {
-  response.status(201).json({
-    status: 'success',
-    createdAt: request.requestTime,
-  });
+exports.createTour = async (request, response) => {
+  try {
+    // const newTour = new Tour({});
+    // newTour.save();
+    const newTour = await Tour.create(request.body);
+
+    response.status(201).json({
+      status: 'success',
+      createdTour: newTour,
+      createdAt: request.requestTime,
+    });
+  } catch (error) {
+    response.status(400).json({
+      status: 'fail',
+      message: `invalid request data`,
+      requestedAt: request.requestTime,
+    });
+  }
 };
 
 exports.updateTour = (request, response) => {
