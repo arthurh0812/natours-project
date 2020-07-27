@@ -4,13 +4,34 @@ const Tour = require('../models/tourModel');
 // 1.) EXPORT ROUTE HANDLERS
 exports.getAllTours = async (request, response) => {
   try {
-    const allTours = await Tour.find();
+    // BUILDING THE QUERY
+    const queryObj = { ...request.query };
 
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+
+    excludedFields.forEach((exc) => {
+      delete queryObj[exc];
+    });
+
+    console.log(request.query, queryObj);
+
+    const query = Tour.find(queryObj);
+
+    // const query = Tour.find()
+    //   .where('duration')
+    //   .equals(5)
+    //   .where('difficulty')
+    //   .equals('easy');
+
+    // EXECUTING QUERY
+    const tours = await query;
+
+    // SEND RESPONSE
     response.status(200).json({
       status: 'success',
-      results: allTours.length,
+      results: tours.length,
       data: {
-        tours: allTours,
+        tours: tours,
       },
       requestedAt: request.requestTime,
     });
