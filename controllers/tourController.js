@@ -4,18 +4,48 @@ const Tour = require('../models/tourModel');
 // 1.) EXPORT ROUTE HANDLERS
 exports.getAllTours = async (request, response) => {
   try {
-    // BUILDING THE QUERY
+    // 1a.) filtering
     const queryObj = { ...request.query };
-
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
-
     excludedFields.forEach((exc) => {
       delete queryObj[exc];
     });
+    // 1b.) advanced filtering
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
 
-    console.log(request.query, queryObj);
+    let query = Tour.find(JSON.parse(queryStr));
 
-    const query = Tour.find(queryObj);
+    // 2.) sorting
+    if (request.query.sort) {
+      const sortBy = request.query.sort.split(',').join(' ');
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort('-createdAt');
+    }
+
+    // 3.) field limiting
+    if (request.query.fields) {
+      const fields = request.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    } else {
+      query = query.select('-__v');
+    }
+
+    // 4.) pagination
+    const page = request.query.page * 1 || 1;
+    const limit = request.query.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    if (request.query.page) {
+      const amountOfTours = await Tour.countDocuments();
+      if (amountOfTours < skip) throw new Error('This page does not exist');
+    }
+
+    // EXECUTING QUERY
+    const tours = await query;
 
     // const query = Tour.find()
     //   .where('duration')
@@ -23,10 +53,7 @@ exports.getAllTours = async (request, response) => {
     //   .where('difficulty')
     //   .equals('easy');
 
-    // EXECUTING QUERY
-    const tours = await query;
-
-    // SEND RESPONSE
+    // SENDING RESPONSE
     response.status(200).json({
       status: 'success',
       results: tours.length,
@@ -38,7 +65,7 @@ exports.getAllTours = async (request, response) => {
   } catch (error) {
     response.status(404).json({
       status: 'fail',
-      message: `not found`,
+      message: `${error}`,
       requestedAt: request.requestTime,
     });
   }
