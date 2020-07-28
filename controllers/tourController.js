@@ -1,6 +1,55 @@
 // MODULES
 const Tour = require('../models/tourModel');
 
+// MIDDLEWARE FUNCTION
+exports.aliasTopTours = (request, response, next, type) => {
+  try {
+    const possibleSortings = {
+      best: {
+        sort: '-ratingsAverage,price',
+        fields: 'name,price,ratingsAverage,summary,difficulty',
+      },
+      cheap: {
+        sort: 'price,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,summary,difficulty',
+      },
+      expensive: {
+        sort: '-price,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,summary,difficulty',
+      },
+      long: {
+        sort: '-duration,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,summary,difficulty,duration',
+      },
+      short: {
+        sort: 'duration,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,summary,difficulty,duration',
+      },
+      mostRated: {
+        sort: '-ratingsQuantity,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,ratingsQuantity,summary,difficulty',
+      },
+      leastRated: {
+        sort: 'ratingsQuantity,-ratingsAverage',
+        fields: 'name,price,ratingsAverage,ratingsQuantity,summary,difficulty',
+      },
+    };
+
+    // ROUTE PATH MUTATIONS
+    type = type.replace(/(most-rated|most-Rated)/g, 'mostRated');
+    type = type.replace(/(least-rated|least-Rated)/g, 'leastRated');
+    // REMOVEMENTS
+    type = type.replace(/( |€|£|\$|%|~|@|\^)/g, '');
+
+    request.query.limit = request.params.aliasCount;
+    request.query.sort = possibleSortings[type].sort;
+    request.query.fields = possibleSortings[type].fields;
+  } catch (error) {
+    request.query.limit = 1;
+  }
+  next();
+};
+
 // 1.) EXPORT ROUTE HANDLERS
 exports.getAllTours = async (request, response) => {
   try {
@@ -39,8 +88,9 @@ exports.getAllTours = async (request, response) => {
 
     query = query.skip(skip).limit(limit);
 
+    const amountOfTours = await Tour.countDocuments();
+
     if (request.query.page) {
-      const amountOfTours = await Tour.countDocuments();
       if (amountOfTours < skip) throw new Error('This page does not exist');
     }
 

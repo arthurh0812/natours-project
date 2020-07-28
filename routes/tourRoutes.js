@@ -5,10 +5,13 @@ const tourController = require('../controllers/tourController');
 // 1.) CREATE ROUTER
 const router = express.Router();
 
-// 2.) MIDDLEWARES
-// router.param('id', tourController.checkID);
+// MIDDLEWARE
+router.param('aliasType', tourController.aliasTopTours);
 
-// 3.) DEFINE AND NAVIGATE TO ROUTES
+// 2.) DEFINE AND NAVIGATE TO ROUTES
+// ALIASING
+router.route('/top-:aliasCount-:aliasType').get(tourController.getAllTours);
+// ROUTES
 router
   .route('/')
   .get(tourController.getAllTours)
