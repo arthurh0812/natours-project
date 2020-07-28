@@ -54,14 +54,12 @@ exports.aliasTopTours = (request, response, next, type) => {
 // 1.) EXPORT ROUTE HANDLERS
 exports.getAllTours = async (request, response) => {
   try {
-    const features = new APIFeatures(Tour.find(), request.query)
+    // PROCESSING QUERY
+    const tours = await new APIFeatures(Tour.find(), request.query)
       .filter()
       .sort()
       .limitFields()
-      .paginate();
-
-    // EXECUTING QUERY
-    const tours = await features.query;
+      .paginate().query;
 
     // SENDING RESPONSE
     response.status(200).json({
