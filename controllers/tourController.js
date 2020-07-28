@@ -1,5 +1,6 @@
 // MODULES
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 // MIDDLEWARE FUNCTION
 exports.aliasTopTours = (request, response, next, type) => {
@@ -53,55 +54,14 @@ exports.aliasTopTours = (request, response, next, type) => {
 // 1.) EXPORT ROUTE HANDLERS
 exports.getAllTours = async (request, response) => {
   try {
-    // 1a.) filtering
-    const queryObj = { ...request.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach((exc) => {
-      delete queryObj[exc];
-    });
-    // 1b.) advanced filtering
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, (match) => `$${match}`);
-
-    let query = Tour.find(JSON.parse(queryStr));
-
-    // 2.) sorting
-    if (request.query.sort) {
-      const sortBy = request.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
-    }
-
-    // 3.) field limiting
-    if (request.query.fields) {
-      const fields = request.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-
-    // 4.) pagination
-    const page = request.query.page * 1 || 1;
-    const limit = request.query.limit * 1 || 100;
-    const skip = (page - 1) * limit;
-
-    query = query.skip(skip).limit(limit);
-
-    const amountOfTours = await Tour.countDocuments();
-
-    if (request.query.page) {
-      if (amountOfTours < skip) throw new Error('This page does not exist');
-    }
+    const features = new APIFeatures(Tour.find(), request.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
 
     // EXECUTING QUERY
-    const tours = await query;
-
-    // const query = Tour.find()
-    //   .where('duration')
-    //   .equals(5)
-    //   .where('difficulty')
-    //   .equals('easy');
+    const tours = await features.query;
 
     // SENDING RESPONSE
     response.status(200).json({
