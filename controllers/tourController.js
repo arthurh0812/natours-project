@@ -1,6 +1,7 @@
 // MODULES
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
+const MonthConverter = require('../utils/monthConverter');
 
 // MIDDLEWARE FUNCTION
 exports.aliasTopTours = (request, response, next, type) => {
@@ -26,19 +27,20 @@ exports.aliasTopTours = (request, response, next, type) => {
         sort: 'duration,-ratingsAverage',
         fields: 'name,price,ratingsAverage,summary,difficulty,duration',
       },
-      mostRated: {
+      mostrated: {
         sort: '-ratingsQuantity,-ratingsAverage',
         fields: 'name,price,ratingsAverage,ratingsQuantity,summary,difficulty',
       },
-      leastRated: {
+      leastrated: {
         sort: 'ratingsQuantity,-ratingsAverage',
         fields: 'name,price,ratingsAverage,ratingsQuantity,summary,difficulty',
       },
     };
 
     // ROUTE PATH MUTATIONS
-    type = type.replace(/(most-rated|most-Rated)/g, 'mostRated');
-    type = type.replace(/(least-rated|least-Rated)/g, 'leastRated');
+    type = type.replace(/(most-rated|most-Rated)/g, 'mostrated');
+    type = type.replace(/(least-rated|least-Rated)/g, 'leastrated');
+    type = type.toLowerCase();
     // REMOVEMENTS
     type = type.replace(/( |€|£|\$|%|~|@|\^)/g, '');
 
@@ -46,7 +48,11 @@ exports.aliasTopTours = (request, response, next, type) => {
     request.query.sort = possibleSortings[type].sort;
     request.query.fields = possibleSortings[type].fields;
   } catch (error) {
-    request.query.limit = 1;
+    response.status(400).json({
+      status: `fail`,
+      message: `${error}`,
+      requestedAt: request.requestTime,
+    });
   }
   next();
 };
@@ -157,6 +163,114 @@ exports.deleteTour = async (request, response) => {
     response.status(404).json({
       status: 'fail',
       message: `not found`,
+      requestedAt: request.requestTime,
+    });
+  }
+};
+
+exports.getTourStats = async (request, response) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          _id: { $toUpper: '$difficulty' },
+          totalTours: { $sum: 1 },
+          totalRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      {
+        $sort: { avgPrice: -1 },
+      },
+      // {
+      //   $match: { _id: { $ne: 'EASY' } },
+      // },
+    ]);
+
+    response.status(200).json({
+      status: 'success',
+      data: {
+        statistics: stats,
+      },
+      requestedAt: request.requestTime,
+    });
+  } catch (error) {
+    response.status(404).json({
+      status: 'fail',
+      message: `not found`,
+      requestedAt: request.requestTime,
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (request, response) => {
+  try {
+    const year = request.params.year * 1;
+
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numTours: { $sum: 1 },
+          tours: {
+            $push: {
+              name: '$name',
+              price: '$price',
+              ratingsAverage: '$ratingsAverage',
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          month: '$_id',
+          monthName: new MonthConverter({ $abs: '$_id' }).getMonthName(),
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+      {
+        $sort: {
+          numTours: -1,
+        },
+      },
+      {
+        $limit: 12,
+      },
+    ]);
+
+    response.status(200).json({
+      status: 'success',
+      results: plan.length,
+      data: {
+        plan,
+      },
+      requestedAt: request.requestTime,
+    });
+  } catch (error) {
+    response.status(404).json({
+      status: 'fail',
+      message: error,
       requestedAt: request.requestTime,
     });
   }
