@@ -32,10 +32,11 @@ class APIFeatures {
 
   limitFields() {
     if (this.queryString.fields) {
-      const fields = this.queryString.fields.split(',').join(' ');
+      let fields = this.queryString.fields.split(',').join(' ');
+      fields += ' -__v';
       this.query = this.query.select(fields);
     } else {
-      this.query = this.query.select('-__v');
+      this.query = this.query.select({ __v: 0 });
     }
 
     return this;

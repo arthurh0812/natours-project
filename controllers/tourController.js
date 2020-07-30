@@ -1,7 +1,6 @@
 // MODULES
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
-const MonthConverter = require('../utils/monthConverter');
 
 // MIDDLEWARE FUNCTION
 exports.aliasTopTours = (request, response, next, type) => {
@@ -74,6 +73,7 @@ exports.getAllTours = async (request, response) => {
       data: {
         tours: tours,
       },
+      timeMilliseconds: tours.queryTime,
       requestedAt: request.requestTime,
     });
   } catch (error) {
@@ -88,19 +88,24 @@ exports.getAllTours = async (request, response) => {
 exports.getSpecificTour = async (request, response) => {
   try {
     // const specificTour = await Tour.findOne({ _id: request.params.id });
-    const specificTour = await Tour.findById(request.params.id);
+    const specificTour = await new APIFeatures(Tour.findOne(), {
+      _id: request.params.id,
+    })
+      .filter()
+      .limitFields().query;
 
     response.status(200).json({
       status: 'success',
       data: {
         tour: specificTour,
       },
+      timeMilliseconds: specificTour.queryTime,
       requestedAt: request.requestTime,
     });
   } catch (error) {
     response.status(404).json({
       status: 'fail',
-      message: `not found`,
+      message: error,
       requestedAt: request.requestTime,
     });
   }
@@ -117,12 +122,13 @@ exports.createTour = async (request, response) => {
       data: {
         tour: newTour,
       },
+      timeMilliseconds: newTour.creationTime,
       createdAt: request.requestTime,
     });
   } catch (error) {
     response.status(400).json({
       status: 'fail',
-      message: `invalid request data`,
+      message: `${error}`,
       requestedAt: request.requestTime,
     });
   }
@@ -195,15 +201,17 @@ exports.getTourStats = async (request, response) => {
 
     response.status(200).json({
       status: 'success',
+      results: stats.length,
       data: {
         statistics: stats,
       },
+      timeMilliseconds: stats.aggregationTime,
       requestedAt: request.requestTime,
     });
   } catch (error) {
     response.status(404).json({
       status: 'fail',
-      message: `not found`,
+      message: error,
       requestedAt: request.requestTime,
     });
   }
@@ -241,7 +249,6 @@ exports.getMonthlyPlan = async (request, response) => {
       {
         $addFields: {
           month: '$_id',
-          monthName: new MonthConverter({ $abs: '$_id' }).getMonthName(),
         },
       },
       {
@@ -263,8 +270,9 @@ exports.getMonthlyPlan = async (request, response) => {
       status: 'success',
       results: plan.length,
       data: {
-        plan,
+        AnnualPlan: plan,
       },
+      timeMilliseconds: plan.aggregationTime,
       requestedAt: request.requestTime,
     });
   } catch (error) {
