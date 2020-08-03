@@ -115,7 +115,7 @@ tourSchema.post('save', function (doc, next) {
 // QUERY MIDDLEWARE: runs before/after .find(), findOne() etc.
 // before
 tourSchema.pre(/^find/, function (next) {
-  this.find({ secretTour: { $ne: true } }).select({ secretTour: 0 });
+  this.find({ secretTour: { $ne: true } });
 
   this.startTime = Date.now();
   next();

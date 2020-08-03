@@ -18,6 +18,7 @@
       "warn",
       { "argsIgnorePattern": "request|response|next|val" }
     ],
-    "prefer-object-spread": "off"
+    "prefer-object-spread": "off",
+    "no-var": "off"
   }
 }

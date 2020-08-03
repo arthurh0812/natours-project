@@ -2,7 +2,7 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 
-// MIDDLEWARE FUNCTION
+// MIDDLEWARE FUNCTIONS
 exports.aliasTopTours = (request, response, next, type) => {
   try {
     const possibleSortings = {
@@ -60,11 +60,13 @@ exports.aliasTopTours = (request, response, next, type) => {
 exports.getAllTours = async (request, response) => {
   try {
     // PROCESSING QUERY
-    const tours = await new APIFeatures(Tour.find(), request.query)
+    const features = new APIFeatures(Tour.find(), request.query)
       .filter()
       .sort()
       .limitFields()
-      .paginate().query;
+      .paginate();
+
+    const tours = await features.query;
 
     // SENDING RESPONSE
     response.status(200).json({
