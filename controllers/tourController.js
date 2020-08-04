@@ -1,6 +1,7 @@
 // MODULES
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
+const AppError = require('../utils/appError');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 
 // MIDDLEWARE FUNCTIONS
@@ -74,9 +75,12 @@ exports.getAllTours = catchHandler(async (request, response, next) => {
 
 exports.getSpecificTour = catchHandler(async (request, response, next) => {
   // const specificTour = await Tour.findOne({ _id: request.params.id });
-  const specificTour = await new APIFeatures(Tour.findOne(), {
-    _id: request.params.id,
-  })
+  const specificTour = await new APIFeatures(
+    Tour.findOne({ _id: request.params.id }, (error, res) => {
+      if (error) return next(new AppError('No tour found with that ID', 404));
+    }),
+    request.query
+  )
     .filter()
     .limitFields().query;
 
@@ -104,25 +108,36 @@ exports.createTour = catchHandler(async (request, response, next) => {
 });
 
 exports.updateTour = catchHandler(async (request, response, next) => {
-  const tour = await Tour.findByIdAndUpdate(request.params.id, request.body, {
-    new: true,
-    runValidators: true,
-  });
+  const tour = await Tour.findByIdAndUpdate(
+    request.params.id,
+    request.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+    (error, res) => {
+      if (error) return next(new AppError('No tour found with that ID', 404));
+    }
+  );
 
   response.status(200).json({
     status: 'success',
     data: {
       tour,
     },
+    timeMilliseconds: tour.queryTime,
     updatedAt: request.requestTime,
   });
 });
 
 exports.deleteTour = catchHandler(async (request, response, next) => {
-  await Tour.findByIdAndDelete(request.params.id);
+  const tour = await Tour.findByIdAndDelete(request.params.id, (error, res) => {
+    if (error) return next(new AppError('No tour found with that ID', 404));
+  });
 
   response.status(204).json({
     status: 'success',
+    timeMilliseconds: tour.queryTime,
     deletedAt: request.requestTime,
   });
 });
