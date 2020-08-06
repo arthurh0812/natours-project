@@ -74,15 +74,22 @@ exports.getAllTours = catchHandler(async (request, response, next) => {
 });
 
 exports.getSpecificTour = catchHandler(async (request, response, next) => {
+  let flag = true;
   // const specificTour = await Tour.findOne({ _id: request.params.id });
   const specificTour = await new APIFeatures(
-    Tour.findOne({ _id: request.params.id }, (error, res) => {
-      if (error) return next(new AppError('No tour found with that ID', 404));
+    Tour.findOne({ _id: request.params.id }, (error, result) => {
+      if ((result === undefined || result.length === 0) && !error) {
+        flag = false;
+      }
     }),
     request.query
   )
     .filter()
     .limitFields().query;
+
+  if (!flag) {
+    return next(new AppError('No tour found with that ID', 404));
+  }
 
   response.status(200).json({
     status: 'success',
@@ -108,17 +115,22 @@ exports.createTour = catchHandler(async (request, response, next) => {
 });
 
 exports.updateTour = catchHandler(async (request, response, next) => {
-  const tour = await Tour.findByIdAndUpdate(
-    request.params.id,
+  let flag = true;
+  const tour = await Tour.findOneAndUpdate(
+    { _id: request.params.id },
     request.body,
     {
       new: true,
       runValidators: true,
     },
-    (error, res) => {
-      if (error) return next(new AppError('No tour found with that ID', 404));
+    (error, result) => {
+      if (result === undefined || result.length === 0) flag = false;
     }
   );
+
+  if (!flag) {
+    return next(new AppError('No tour found with that ID', 404));
+  }
 
   response.status(200).json({
     status: 'success',
@@ -131,10 +143,19 @@ exports.updateTour = catchHandler(async (request, response, next) => {
 });
 
 exports.deleteTour = catchHandler(async (request, response, next) => {
-  const tour = await Tour.findByIdAndDelete(request.params.id, (error, res) => {
-    if (error) return next(new AppError('No tour found with that ID', 404));
-  });
+  let flag = true;
+  const tour = await Tour.findOneAndDelete(
+    { _id: request.params.id },
+    (error, result) => {
+      if (result === undefined) {
+        flag = false;
+      }
+    }
+  );
 
+  if (!flag) {
+    return next(new AppError('No tour found with that ID', 404));
+  }
   response.status(204).json({
     status: 'success',
     timeMilliseconds: tour.queryTime,
