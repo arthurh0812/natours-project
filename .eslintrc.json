@@ -16,9 +16,10 @@
     "prefer-destructuring": ["warn", { "object": true, "array": false }],
     "no-unused-vars": [
       "warn",
-      { "argsIgnorePattern": "request|response|next|val" }
+      { "argsIgnorePattern": "request|response|next|val|result|error" }
     ],
     "prefer-object-spread": "off",
-    "no-var": "off"
+    "no-var": "off",
+    "no-else-return": "off"
   }
 }

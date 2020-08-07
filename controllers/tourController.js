@@ -1,7 +1,7 @@
+/* eslint-disable array-callback-return */
 // MODULES
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
-const AppError = require('../utils/appError');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 
 // MIDDLEWARE FUNCTIONS
@@ -52,14 +52,23 @@ exports.aliasTopTours = catchParam(async (request, response, next, type) => {
 
 // ROUTE HANDLERS
 exports.getAllTours = catchHandler(async (request, response, next) => {
+  let flag = true;
   // PROCESSING QUERY
-  const features = new APIFeatures(Tour.find(), request.query)
+  const tours = await new APIFeatures(
+    Tour.find((error, result) => {
+      if (error) {
+        flag = false;
+        next(error);
+      }
+    }),
+    request.query
+  )
     .filter()
     .sort()
     .limitFields()
-    .paginate();
+    .paginate().query;
 
-  const tours = await features.query;
+  if (!flag) return;
 
   // SENDING RESPONSE
   response.status(200).json({
@@ -78,8 +87,13 @@ exports.getSpecificTour = catchHandler(async (request, response, next) => {
   // const specificTour = await Tour.findOne({ _id: request.params.id });
   const specificTour = await new APIFeatures(
     Tour.findOne({ _id: request.params.id }, (error, result) => {
-      if ((result === undefined || result.length === 0) && !error) {
-        flag = false;
+      if (error) {
+        if (error.name === 'CastError') {
+          flag = false;
+        } else {
+          flag = false;
+          next(error);
+        }
       }
     }),
     request.query
@@ -88,7 +102,7 @@ exports.getSpecificTour = catchHandler(async (request, response, next) => {
     .limitFields().query;
 
   if (!flag) {
-    return next(new AppError('No tour found with that ID', 404));
+    return;
   }
 
   response.status(200).json({
@@ -124,12 +138,19 @@ exports.updateTour = catchHandler(async (request, response, next) => {
       runValidators: true,
     },
     (error, result) => {
-      if (result === undefined || result.length === 0) flag = false;
+      if (error) {
+        if (error.name === 'CastError') {
+          flag = false;
+        } else {
+          flag = false;
+          next(error);
+        }
+      }
     }
   );
 
   if (!flag) {
-    return next(new AppError('No tour found with that ID', 404));
+    return;
   }
 
   response.status(200).json({
@@ -147,15 +168,21 @@ exports.deleteTour = catchHandler(async (request, response, next) => {
   const tour = await Tour.findOneAndDelete(
     { _id: request.params.id },
     (error, result) => {
-      if (result === undefined) {
-        flag = false;
+      if (error) {
+        if (error.name === 'CastError') {
+          flag = false;
+        } else {
+          flag = false;
+          next(error);
+        }
       }
     }
   );
 
   if (!flag) {
-    return next(new AppError('No tour found with that ID', 404));
+    return;
   }
+
   response.status(204).json({
     status: 'success',
     timeMilliseconds: tour.queryTime,

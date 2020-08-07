@@ -2,7 +2,9 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
+const state = require('../utils/state');
 const MonthConverter = require('../utils/monthConverter');
+const AppError = require('../utils/appError');
 
 // SCHEMA
 const tourSchema = new mongoose.Schema(
@@ -35,7 +37,7 @@ const tourSchema = new mongoose.Schema(
       required: [true, 'Each tour must have a difficulty'],
       enum: {
         values: ['easy', 'medium', 'difficult'],
-        message: "Possible difficulties: 'easy', 'medium' or 'difficult'.",
+        message: "Possible difficulties: 'easy', 'medium' or 'difficult'",
       },
     },
     ratingsAverage: {
@@ -60,7 +62,7 @@ const tourSchema = new mongoose.Schema(
           return value < this.price;
         },
         message:
-          'The price discount ({VALUE}) cannot be greater than or equal to the regular price.',
+          'The price discount ({VALUE}) cannot be greater than or equal to the regular price',
       },
     },
     summary: {
@@ -118,12 +120,48 @@ tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
 
   this.startTime = Date.now();
+  // reset state for checking if there was already an error
+  state.alreadyError = false;
   next();
 });
-// after
-tourSchema.post(/^find/, function (docs, next) {
-  docs.queryTime = Date.now() - this.startTime;
-  next();
+
+// after find()
+tourSchema.post('find', function (docs, next) {
+  if (docs) {
+    if (docs.length >= 1) {
+      docs.queryTime = Date.now() - this.startTime;
+      return next();
+    } else if (!state.alreadyError) {
+      state.alreadyError = true;
+      return next(new AppError('No tour found with that ID', 404));
+    }
+  } else if (!state.alreadyError) {
+    state.alreadyError = true;
+    return next(new AppError('No tour found with that ID', 404));
+  }
+});
+// after findOneAndUpdate()
+tourSchema.post('findOneAndUpdate', function (doc, next) {
+  if (doc) {
+    doc.queryTime = Date.now() - this.startTime;
+    next();
+  }
+  // else if there was no document found
+  else if (!state.alreadyError) {
+    next(new AppError('No tour found with that ID', 404));
+  }
+});
+// after findOneAndDelete()
+tourSchema.post('findOneAndDelete', function (doc, next) {
+  // console.log(`findOneAndDelete: ${doc}`);
+  if (doc) {
+    doc.queryTime = Date.now() - this.startTime;
+    next();
+  }
+  // else if there was no document found
+  else if (!state.alreadyError) {
+    next(new AppError('No tour found with that ID', 404));
+  }
 });
 
 // AGGREGATION MIDDLEWARE: runs before/after .aggregate()
