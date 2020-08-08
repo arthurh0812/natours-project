@@ -3,6 +3,7 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
+const state = require('../utils/state');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -139,12 +140,10 @@ exports.updateTour = catchHandler(async (request, response, next) => {
     },
     (error, result) => {
       if (error) {
-        if (error.name === 'CastError') {
-          flag = false;
-        } else {
-          flag = false;
+        if (!state.alreadyError) {
           next(error);
         }
+        flag = false;
       }
     }
   );
@@ -169,12 +168,10 @@ exports.deleteTour = catchHandler(async (request, response, next) => {
     { _id: request.params.id },
     (error, result) => {
       if (error) {
-        if (error.name === 'CastError') {
-          flag = false;
-        } else {
-          flag = false;
+        if (!state.alreadyError) {
           next(error);
         }
+        flag = false;
       }
     }
   );

@@ -1,11 +1,14 @@
 // MODULES
 const express = require('express');
 const userController = require('../controllers/userController');
+const authController = require('../controllers/authController');
 
 // 1.) CREATE ROUTER
 const router = express.Router();
 
 // 2.) DEFINE AND NAVIGATE TO ROUTES
+router.post('/signup', authController.signUp);
+
 router
   .route('/')
   .get(userController.getAllUsers)

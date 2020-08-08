@@ -3,6 +3,7 @@ const express = require('express');
 const morgan = require('morgan');
 
 const AppError = require('./utils/appError');
+const state = require('./utils/state');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -21,6 +22,12 @@ app.use(express.static(`${__dirname}/public`));
 
 app.use((request, response, next) => {
   request.requestTime = new Date().toISOString();
+  next();
+});
+
+// reset state for checking if there was already an error
+app.use((request, response, next) => {
+  state.alreadyError = false;
   next();
 });
 

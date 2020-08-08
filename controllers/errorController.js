@@ -74,7 +74,7 @@ module.exports = (error, request, response, next) => {
       errorResp = error;
     }
 
-    state.alreadyError = true;
     sendErrorProd(errorResp, response);
   }
+  state.alreadyError = true;
 };

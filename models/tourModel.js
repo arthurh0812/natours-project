@@ -120,8 +120,6 @@ tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
 
   this.startTime = Date.now();
-  // reset state for checking if there was already an error
-  state.alreadyError = false;
   next();
 });
 
