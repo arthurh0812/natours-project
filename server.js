@@ -7,6 +7,12 @@ dotenv.config({ path: './config.env' });
 const mongoose = require('mongoose');
 const app = require('./app');
 
+process.on('uncaughtException', (error) => {
+  console.log('UNCAUGHT EXCEPTION: Shutting down...');
+  console.log(error.name, error.message);
+  process.exit(1);
+});
+
 let DBConnetionString = process.env.DATABASE.replace(
   '<USERNAME>',
   process.env.DATABASE_USERNAME
@@ -23,18 +29,24 @@ DBConnetionString = DBConnetionString.replace(
 // 1.) CONNECTING TO DATABASE
 mongoose
   .connect(DBConnetionString, {
-    useUnifiedTopology: true,
+    useUnifiedTopology: false,
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
   })
-  .then(() => console.log(`DB connection succesful!`))
-  .catch((error) => {
-    console.log(`Error: ${error}`);
-  });
+  .then(() => console.log(`DB connection succesful!`));
 
 // 2.) STARTING SERVER
 const port = process.env.PORT || 8000;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
+});
+
+// Error Handler for Unhandled Rejections
+process.on('unhandledRejection', (error) => {
+  console.log('UNHANDLED REJECTION: Shutting down...');
+  console.log(error);
+  server.close(() => {
+    process.exit(1);
+  });
 });
