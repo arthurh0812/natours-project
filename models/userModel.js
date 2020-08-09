@@ -1,6 +1,7 @@
 // MODULES
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 const state = require('../utils/state');
 const AppError = require('../utils/appError');
 
@@ -36,7 +37,26 @@ const userSchema = new mongoose.Schema({
   passwordConfirm: {
     type: String,
     required: [true, 'Please confirm your password'],
+    validate: {
+      // THIS ONLY WORKS ON .create() OR ON .save()
+      validator: function (toConfirmPassword) {
+        return toConfirmPassword === this.password;
+      },
+      message: 'The confirmation password has to be the equal to your password',
+    },
   },
+});
+
+userSchema.pre('save', async function (next) {
+  // only run this function if password was modified
+  if (!this.isModified('password')) return next();
+
+  // hash the password with cost of 12
+  this.password = await bcrypt.hash(this.password, 12);
+
+  // remove passwordConfirm data
+  this.passwordConfirm = undefined;
+  next();
 });
 
 const User = mongoose.model('User', userSchema);
