@@ -3,6 +3,7 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
+const AppError = require('../utils/appError');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -83,27 +84,10 @@ exports.getAllTours = catchHandler(async (request, response, next) => {
 });
 
 exports.getSpecificTour = catchHandler(async (request, response, next) => {
-  let flag = true;
   // const specificTour = await Tour.findOne({ _id: request.params.id });
-  const specificTour = await new APIFeatures(
-    Tour.findOne({ _id: request.params.id }, (error, result) => {
-      if (error) {
-        if (error.name === 'CastError') {
-          flag = false;
-        } else {
-          flag = false;
-          next(error);
-        }
-      }
-    }),
-    request.query
-  )
-    .filter()
-    .limitFields().query;
+  const specificTour = await Tour.findOne({ _id: request.params.id });
 
-  if (!flag) {
-    return;
-  }
+  if (!specificTour) return;
 
   response.status(200).json({
     status: 'success',
@@ -129,29 +113,16 @@ exports.createTour = catchHandler(async (request, response, next) => {
 });
 
 exports.updateTour = catchHandler(async (request, response, next) => {
-  let flag = true;
   const tour = await Tour.findOneAndUpdate(
     { _id: request.params.id },
     request.body,
     {
       new: true,
       runValidators: true,
-    },
-    (error, result) => {
-      if (error) {
-        if (error.name === 'CastError') {
-          flag = false;
-        } else {
-          flag = false;
-          next(error);
-        }
-      }
     }
   );
 
-  if (!flag) {
-    return;
-  }
+  if (!tour) return;
 
   response.status(200).json({
     status: 'success',
@@ -164,24 +135,9 @@ exports.updateTour = catchHandler(async (request, response, next) => {
 });
 
 exports.deleteTour = catchHandler(async (request, response, next) => {
-  let flag = true;
-  const tour = await Tour.findOneAndDelete(
-    { _id: request.params.id },
-    (error, result) => {
-      if (error) {
-        if (error.name === 'CastError') {
-          flag = false;
-        } else {
-          flag = false;
-          next(error);
-        }
-      }
-    }
-  );
+  const tour = await Tour.findOneAndDelete({ _id: request.params.id });
 
-  if (!flag) {
-    return;
-  }
+  if (!tour) return;
 
   response.status(204).json({
     status: 'success',

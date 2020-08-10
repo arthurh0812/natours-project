@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
-const AppError = require('../utils/appError');
-const state = require('../utils/state');
+// const AppError = require('../utils/appError');
+// const state = require('../utils/state');
 // const AppError = require('../utils/appError');
 
 // SCHEMA
@@ -63,9 +63,8 @@ userSchema.pre('save', async function (next) {
 
 userSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
-
   this.startTime = Date.now();
-  next();
+  return next();
 });
 
 userSchema.post('find', function (docs, next) {
