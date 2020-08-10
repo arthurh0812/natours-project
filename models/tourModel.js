@@ -126,13 +126,12 @@ tourSchema.pre(/^find/, function (next) {
 // after find()
 tourSchema.post('find', function (docs, next) {
   if (docs) {
-    if (docs.length >= 1) {
-      docs.queryTime = Date.now() - this.startTime;
-      return next();
-    } else if (!state.alreadyError) {
+    if (!docs.length >= 1 && !state.alreadyError) {
       state.alreadyError = true;
       return next(new AppError('No tour found with that ID', 404));
     }
+    docs.queryTime = Date.now() - this.startTime;
+    return next();
   } else if (!state.alreadyError) {
     state.alreadyError = true;
     return next(new AppError('No tour found with that ID', 404));
@@ -140,26 +139,17 @@ tourSchema.post('find', function (docs, next) {
 });
 // after findOneAndUpdate()
 tourSchema.post('findOneAndUpdate', function (doc, next) {
-  if (doc) {
-    doc.queryTime = Date.now() - this.startTime;
-    return next();
-  }
-  // else if there was no document found
-  else if (!state.alreadyError) {
+  if (!doc && !state.alreadyError)
     return next(new AppError('No tour found with that ID', 404));
-  }
+  doc.queryTime = Date.now() - this.startTime;
+  return next();
 });
 // after findOneAndDelete()
 tourSchema.post('findOneAndDelete', function (doc, next) {
-  // console.log(`findOneAndDelete: ${doc}`);
-  if (doc) {
-    doc.queryTime = Date.now() - this.startTime;
-    return next();
-  }
-  // else if there was no document found
-  else if (!state.alreadyError) {
+  if (!doc && !state.alreadyError)
     return next(new AppError('No tour found with that ID', 404));
-  }
+  doc.queryTime = Date.now() - this.startTime;
+  return next();
 });
 
 // AGGREGATION MIDDLEWARE: runs before/after .aggregate()

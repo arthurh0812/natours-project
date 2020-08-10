@@ -2,8 +2,9 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
-const state = require('../utils/state');
 const AppError = require('../utils/appError');
+const state = require('../utils/state');
+// const AppError = require('../utils/appError');
 
 // SCHEMA
 const userSchema = new mongoose.Schema({
@@ -33,6 +34,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide a password'],
     minlength: 8,
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -58,6 +60,25 @@ userSchema.pre('save', async function (next) {
   this.passwordConfirm = undefined;
   next();
 });
+
+userSchema.pre(/^find/, function (next) {
+  this.find({ secretTour: { $ne: true } });
+
+  this.startTime = Date.now();
+  next();
+});
+
+userSchema.post('find', function (docs, next) {
+  if (docs) docs.queryTime = Date.now() - this.startTime;
+  return next();
+});
+
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 
 const User = mongoose.model('User', userSchema);
 
