@@ -1,3 +1,4 @@
+// MODULES
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
@@ -17,7 +18,6 @@ exports.signUp = catchHandler(async (request, response, next) => {
     email: request.body.email,
     password: request.body.password,
     passwordConfirm: request.body.passwordConfirm,
-    passwordChangedAt: request.body.passwordChangedAt,
   });
 
   const token = signWebToken(newUser._id);
@@ -97,3 +97,15 @@ exports.protect = catchHandler(async (request, response, next) => {
   request.user = currentUser;
   next();
 });
+
+exports.restrictTo = (...roles) => {
+  return (request, response, next) => {
+    // roles is an array
+    if (!roles.includes(request.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action.', 403)
+      );
+    }
+    next();
+  };
+};

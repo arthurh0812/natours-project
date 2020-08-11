@@ -1,4 +1,5 @@
 /* eslint-disable array-callback-return */
+// MODULES
 const User = require('../models/userModel');
 const { catchHandler } = require('../utils/catchFunction');
 

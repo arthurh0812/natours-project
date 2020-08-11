@@ -101,50 +101,47 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 });
 
-// DOCUMENT MIDDLEWARE: runs before/after .save() and .create() (but not for .update())
-// before
+// DOCUMENT MIDDLEWARE
+// before .save(), .create()
 tourSchema.pre('save', function (next) {
   this.startTime = Date.now();
   this.slug = slugify(this.name, { lower: true });
   next();
 });
-// after
+// after .save(), .create()
 tourSchema.post('save', function (doc, next) {
   doc.creationTime = Date.now() - this.startTime;
   next();
 });
 
-// QUERY MIDDLEWARE: runs before/after .find(), findOne() etc.
-// before
+// QUERY MIDDLEWARE
+// before .find(), .findOne(), .findById() etc.
 tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
-
   this.startTime = Date.now();
   next();
 });
-
 // after find()
 tourSchema.post('find', function (docs, next) {
-  if (docs) docs.queryTime = Date.now() - this.startTime;
-  return next();
+  docs.queryTime = Date.now() - this.startTime;
+  next();
 });
 // after findOne(), findOneAndUpdate(), findOneAndDelete()
 tourSchema.post(/^findOne/, function (doc, next) {
   if (!doc && !state.alreadyError)
     return next(new AppError('No tour found with that ID', 404));
   doc.queryTime = Date.now() - this.startTime;
-  return next();
+  next();
 });
 
-// AGGREGATION MIDDLEWARE: runs before/after .aggregate()
-// before
+// AGGREGATION MIDDLEWARE
+// before .aggregate()
 tourSchema.pre('aggregate', function (next) {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-
   this.startTime = Date.now();
   next();
 });
-// after
+// after .aggregate()
 tourSchema.post('aggregate', function (docs, next) {
   docs.forEach((doc) => {
     if (doc.month) doc.monthName = new MonthConverter(doc.month).getMonthName();

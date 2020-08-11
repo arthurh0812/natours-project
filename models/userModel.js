@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
   photo: {
     type: String,
   },
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'],
+    default: 'user',
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password'],
@@ -51,6 +56,8 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// DOCUMENT MIDDLEWARE
+// before .save()
 userSchema.pre('save', async function (next) {
   // only run this function if password was modified
   if (!this.isModified('password')) return next();
@@ -63,18 +70,20 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// QUERY MIDDLEWARE
+// before .find(), .findOne(), .findById() etc.
 userSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
   this.startTime = Date.now();
   return next();
 });
-
+// after .find()
 userSchema.post('find', function (docs, next) {
-  if (docs) docs.queryTime = Date.now() - this.startTime;
+  docs.queryTime = Date.now() - this.startTime;
   return next();
 });
 
-// after findOneAndUpdate(), findOneAndDelete()
+// after .findOneAndUpdate(), .findOneAndDelete()
 userSchema.post(/^findOneAnd/, function (doc, next) {
   if (!doc && !state.alreadyError)
     return next(new AppError('No user found with that ID', 404));
@@ -82,6 +91,7 @@ userSchema.post(/^findOneAnd/, function (doc, next) {
   return next();
 });
 
+// SCHEMA METHODS
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword
@@ -90,16 +100,16 @@ userSchema.methods.correctPassword = async function (
 };
 
 userSchema.methods.changedPasswordAfter = function (jwtTimestamp) {
+  // if there was a password change at all
   if (this.passwordChangedAt) {
     const changedTimestamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
       10
     );
-
+    // if the time the password was changed is after the time the current token was initiated return true otherwise return false
     return jwtTimestamp < changedTimestamp;
   }
-
-  // false means not changed
+  // no change: return false
   return false;
 };
 
