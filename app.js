@@ -21,13 +21,10 @@ app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
 app.use((request, response, next) => {
-  request.requestTime = new Date().toISOString();
-  next();
-});
-
-// reset state for checking if there was already an error
-app.use((request, response, next) => {
+  // reset state for checking if there was already an error
   state.alreadyError = false;
+  // set time as a property of request
+  request.requestTime = new Date().toISOString();
   next();
 });
 

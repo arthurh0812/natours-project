@@ -128,22 +128,8 @@ tourSchema.post('find', function (docs, next) {
   if (docs) docs.queryTime = Date.now() - this.startTime;
   return next();
 });
-// after findOne()
-tourSchema.post('findOne', function (doc, next) {
-  if (!doc && !state.alreadyError)
-    return next(new AppError('No tour found with that ID', 404));
-  doc.queryTime = Date.now() - this.startTime;
-  return next();
-});
-// after findOneAndUpdate()
-tourSchema.post('findOneAndUpdate', function (doc, next) {
-  if (!doc && !state.alreadyError)
-    return next(new AppError('No tour found with that ID', 404));
-  doc.queryTime = Date.now() - this.startTime;
-  return next();
-});
-// after findOneAndDelete()
-tourSchema.post('findOneAndDelete', function (doc, next) {
+// after findOne(), findOneAndUpdate(), findOneAndDelete()
+tourSchema.post(/^findOne/, function (doc, next) {
   if (!doc && !state.alreadyError)
     return next(new AppError('No tour found with that ID', 404));
   doc.queryTime = Date.now() - this.startTime;

@@ -3,7 +3,6 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
-const AppError = require('../utils/appError');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
