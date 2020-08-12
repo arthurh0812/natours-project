@@ -13,6 +13,18 @@ const signWebToken = (ID) => {
   });
 };
 
+const createAndSendWebToken = (statusCode, user, response) => {
+  const token = signWebToken(user._id);
+
+  response.status(statusCode).json({
+    status: 'success',
+    token: token,
+    data: {
+      user: user,
+    },
+  });
+};
+
 exports.signUp = catchHandler(async (request, response, next) => {
   const newUser = await User.create({
     name: request.body.name,
@@ -22,15 +34,7 @@ exports.signUp = catchHandler(async (request, response, next) => {
     passwordConfirm: request.body.passwordConfirm,
   });
 
-  const token = signWebToken(newUser._id);
-
-  response.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  createAndSendWebToken(201, newUser, response);
 });
 
 exports.logIn = catchHandler(async (request, response, next) => {
@@ -55,15 +59,7 @@ exports.logIn = catchHandler(async (request, response, next) => {
     return next(new AppError('Incorrect username or email or password', 401));
 
   // 3) if everything is ok, send token to client
-  const token = signWebToken(user._id);
-
-  response.status(200).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
+  createAndSendWebToken(200, user, response);
 });
 
 exports.forgotPassword = catchHandler(async (request, response, next) => {
@@ -131,15 +127,26 @@ exports.resetPassword = catchHandler(async (request, response, next) => {
   await user.save();
 
   // 4) log user in and send JWT to client
-  const token = signWebToken(user._id);
+  createAndSendWebToken(200, user, response);
+});
 
-  response.status(200).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
+exports.changePassword = catchHandler(async (request, response, next) => {
+  // 1) get user by token (findByIdAndUpdate() would not work as it doesn't keep object in memory and so the validator will not have access to 'this')
+  const user = await User.findById(request.user._id).select('+password');
+
+  // 2) check if POSTed password is correct
+  if (
+    !(await user.correctPassword(request.body.currentPassword, user.password))
+  )
+    return next(new AppError('The password is not correct.', 401));
+
+  // 3) update password
+  user.password = request.body.newPassword;
+  user.passwordConfirm = request.body.newPasswordConfirm;
+  await user.save();
+
+  // 4) log user in, send JWT
+  createAndSendWebToken(200, user, response);
 });
 
 exports.protect = catchHandler(async (request, response, next) => {
