@@ -1,6 +1,7 @@
 // MODULES
 const mongoose = require('mongoose');
 const validator = require('validator');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 const state = require('../utils/state');
@@ -37,7 +38,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please provide a password'],
-    minlength: 8,
+    minlength: [8, 'Your password must at least be 8 characters long'],
     select: false,
   },
   passwordConfirm: {
@@ -54,10 +55,16 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date,
   },
+  passwordResetToken: {
+    type: String,
+  },
+  passwordResetExpires: {
+    type: Date,
+  },
 });
 
 // DOCUMENT MIDDLEWARE
-// before .save()
+// before .save(), .create()
 userSchema.pre('save', async function (next) {
   // only run this function if password was modified
   if (!this.isModified('password')) return next();
@@ -67,6 +74,14 @@ userSchema.pre('save', async function (next) {
 
   // remove passwordConfirm data
   this.passwordConfirm = undefined;
+
+  next();
+});
+
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
@@ -111,6 +126,19 @@ userSchema.methods.changedPasswordAfter = function (jwtTimestamp) {
   }
   // no change: return false
   return false;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);
