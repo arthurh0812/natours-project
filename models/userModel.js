@@ -64,6 +64,11 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: {
     type: Date,
   },
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // DOCUMENT MIDDLEWARE
@@ -91,7 +96,7 @@ userSchema.pre('save', function (next) {
 // QUERY MIDDLEWARE
 // before .find(), .findOne(), .findById() etc.
 userSchema.pre(/^find/, function (next) {
-  this.find({ secretTour: { $ne: true } });
+  this.find({ secretTour: { $ne: true }, active: { $ne: false } });
   this.startTime = Date.now();
   return next();
 });

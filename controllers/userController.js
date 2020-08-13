@@ -85,31 +85,38 @@ exports.changeUsername = catchHandler(async (request, response, next) => {
       )
     );
 
-  // 3) filter out only the username field to be changed
-  const filteredBody = filterObj(request.body, 'username');
-
-  // 4) get user document by id and update the username
+  // 3) get user document by id and update the username
   const updatedUser = await User.findByIdAndUpdate(
     request.user._id,
-    filteredBody,
+    { username: request.body.username },
     {
       new: true,
       runValidators: true,
     }
   );
 
-  // 5) extend the duration when to again change the username by 30 days
+  // 4) extend the duration when to again change the username by 30 days
   if (request.user.role !== 'admin') {
     updatedUser.usernameChangedAt = Date.now();
     await updatedUser.save({ validateBeforeSave: false });
   }
 
-  // 6) send the newly updated user to client
+  // 5) send the newly updated user to client
   response.status(200).json({
     status: 'success',
     data: {
       user: updatedUser,
     },
+  });
+});
+
+exports.deleteMe = catchHandler(async (request, response, next) => {
+  // get the user by id and set the active property to false
+  await User.findByIdAndUpdate(request.user._id, { active: false });
+
+  response.status(204).json({
+    status: 'success',
+    data: null,
   });
 });
 
