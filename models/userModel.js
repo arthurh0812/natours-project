@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide your username'],
     unique: true,
   },
+  usernameChangedAt: {
+    type: Date,
+  },
   email: {
     type: String,
     required: [true, 'Please provide your email'],
@@ -114,13 +117,24 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
+userSchema.methods.checkUsernameChangeProhibition = function () {
+  if (this.usernameChangedAt) {
+    const convertedProhibitionTime = parseInt(
+      this.usernameChangedAt.getTime() + 30 * 24 * 60 * 60 * 1000,
+      10
+    );
+
+    return Date.now() < convertedProhibitionTime;
+  }
+
+  return false;
+};
+
 userSchema.methods.changedPasswordAfter = function (jwtTimestamp) {
   // if there was a password change at all
   if (this.passwordChangedAt) {
-    const changedTimestamp = parseInt(
-      this.passwordChangedAt.getTime() / 1000,
-      10
-    );
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime(), 10);
+
     // if the time the password was changed is after the time the current token was initiated return true otherwise return false
     return jwtTimestamp < changedTimestamp;
   }

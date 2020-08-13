@@ -173,7 +173,7 @@ exports.protect = catchHandler(async (request, response, next) => {
     );
 
   // 4) check if user changed password after token was issued
-  if (currentUser.changedPasswordAfter(decoded.iat))
+  if (currentUser.changedPasswordAfter(decoded.iat * 1000))
     return next(
       new AppError('User changed password. Please login again.', 401)
     );
