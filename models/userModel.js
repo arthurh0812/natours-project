@@ -58,6 +58,15 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date,
   },
+  passwordFailures: {
+    type: Number,
+    default: 0,
+    select: false,
+  },
+  passwordProhibition: {
+    type: Date,
+    select: false,
+  },
   passwordResetToken: {
     type: String,
   },
@@ -120,6 +129,21 @@ userSchema.methods.correctPassword = async function (
   userPassword
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+userSchema.methods.tooManyFailedAttempts = function (failedAttemptCount) {
+  return this.passwordFailures >= failedAttemptCount;
+};
+
+userSchema.methods.isProhibitedLogin = function () {
+  if (this.passwordProhibition) {
+    const convertedProhibitionTime = parseInt(
+      this.passwordProhibition.getTime(),
+      10
+    );
+    return Date.now() < convertedProhibitionTime;
+  }
+  return false;
 };
 
 userSchema.methods.checkUsernameChangeProhibition = function () {

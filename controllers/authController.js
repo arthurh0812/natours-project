@@ -38,6 +38,15 @@ exports.signUp = catchHandler(async (request, response, next) => {
 });
 
 exports.logIn = catchHandler(async (request, response, next) => {
+  // login prohibition function
+  const prohibitLogin = (user) =>
+    next(
+      new AppError(
+        `You had too many incorrect password attempts. Please wait until ${user.passwordProhibition} to login again.`,
+        401
+      )
+    );
+
   const { username, email, password } = request.body;
 
   // 1) check if username && password || email && password are given
@@ -50,15 +59,51 @@ exports.logIn = catchHandler(async (request, response, next) => {
     );
   }
 
-  // 2) check if user exists && password matches
+  // 2) check if user exists
   const user = await User.findOne({
     $or: [{ email: email }, { username: username }],
   }).select('+password');
 
-  if (!user || !(await user.correctPassword(password, user.password)))
-    return next(new AppError('Incorrect username or email or password', 401));
+  if (!user)
+    return next(new AppError('Incorrect username or email or password.'));
 
-  // 3) if everything is ok, send token to client
+  // 3) check if user is allowed to login
+  if (user.isProhibitedLogin()) {
+    return prohibitLogin(user);
+  }
+
+  // 4) check if given password is correct
+  if (!(await user.correctPassword(password, user.password))) {
+    // 5) increment failed attempts count by 1
+    user.passwordFailures += 1;
+    await user.save({ validateBeforeSave: false });
+    // 6) if it were too many failed attempts, set prohibition time
+    if (user.tooManyFailedAttempts(5)) {
+      if (user.tooManyFailedAttempts(8)) {
+        // 4 hours
+        user.passwordProhibition = Date.now() + 4 * 60 * 60 * 1000;
+      } else if (user.tooManyFailedAttempts(7)) {
+        // 2 hours
+        user.passwordProhibition = Date.now() + 2 * 60 * 60 * 1000;
+      } else if (user.tooManyFailedAttempts(6)) {
+        // 1 hour
+        user.passwordProhibition = Date.now() + 1 * 60 * 60 * 1000;
+      } else if (user.tooManyFailedAttempts(5)) {
+        // 1/2 hour
+        user.passwordProhibition = Date.now() + (1 / 2) * 60 * 60 * 1000;
+      }
+      await user.save({ validateBeforeSave: false });
+      return prohibitLogin(user);
+    }
+    return next(new AppError('Incorrect username or email or password', 401));
+  }
+
+  // 7) if password was correct, reset failure count and remove prohibition time
+  user.passwordFailures = 0;
+  user.passwordProhibition = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  // 8) if everything is ok, send token to client
   createAndSendWebToken(200, user, response);
 });
 
