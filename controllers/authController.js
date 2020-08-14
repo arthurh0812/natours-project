@@ -62,7 +62,7 @@ exports.logIn = catchHandler(async (request, response, next) => {
   // 2) check if user exists
   const user = await User.findOne({
     $or: [{ email: email }, { username: username }],
-  }).select('+password');
+  }).select('+password +passwordFailures +passwordProhibition');
 
   if (!user)
     return next(new AppError('Incorrect username or email or password.'));
