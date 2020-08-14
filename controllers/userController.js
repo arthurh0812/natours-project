@@ -72,9 +72,17 @@ exports.changeUsername = catchHandler(async (request, response, next) => {
   if (!request.body.username)
     return next(new AppError('Please name your new username.', 400));
 
-  const user = await User.findById(request.user._id);
+  // 2) get user by id and check if there is one
+  const user = await User.findOne({ _id: request.user._id });
 
-  // 2) check if user is allowed to change his username
+  if (!user)
+    return next(
+      new AppError(
+        'It seems that something went wrong with your authentication. Please log in again.'
+      )
+    );
+
+  // 3) check if user is allowed to change his username
   if (user.checkUsernameChangeProhibition())
     return next(
       new AppError(
@@ -85,33 +93,29 @@ exports.changeUsername = catchHandler(async (request, response, next) => {
       )
     );
 
-  // 3) get user document by id and update the username
-  const updatedUser = await User.findByIdAndUpdate(
+  // 4) update the username
+  const newObj = await User.findByIdAndUpdate(
     request.user._id,
     { username: request.body.username },
-    {
-      new: true,
-      runValidators: true,
-    }
+    { new: true, runValidators: true }
   );
-
-  // 4) extend the duration when to again change the username by 30 days
+  // 5) extend the duration when to again change the username by 30 days
   if (request.user.role !== 'admin') {
-    updatedUser.usernameChangedAt = Date.now();
-    await updatedUser.save({ validateBeforeSave: false });
+    user.usernameChangedAt = Date.now();
+    user.save({ validateBeforeSave: false });
   }
 
-  // 5) send the newly updated user to client
+  // 6) send the newly updated user to client
   response.status(200).json({
     status: 'success',
     data: {
-      user: updatedUser,
+      user: newObj,
     },
   });
 });
 
 exports.deleteMe = catchHandler(async (request, response, next) => {
-  // get the user by id and set the active property to false
+  // 1) get the user by id and set the active property to false
   await User.findByIdAndUpdate(request.user._id, { active: false });
 
   response.status(204).json({

@@ -63,17 +63,21 @@ exports.logIn = catchHandler(async (request, response, next) => {
 });
 
 exports.forgotPassword = catchHandler(async (request, response, next) => {
-  // 1) get user by email
+  // 1) check if an email is specified
+  if (!request.body.email)
+    return next(new AppError('Please name your email address.', 400));
+
+  // 2) get user by email and check if there is one
   const user = await User.findOne({ email: request.body.email });
 
   if (!user)
     return next(new AppError('No user found with that email address.', 404));
 
-  // 2) generate random reset token
+  // 3) generate random reset token
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  // 3) send it to user's email
+  // 4) send it to user's email
   const resetURL = `${request.protocol}://${request.get(
     'host'
   )}/api/v1/users/resetPassword/${resetToken}`;
