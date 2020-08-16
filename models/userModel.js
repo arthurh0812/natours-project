@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema({
       message: 'Please provide a valid email',
     },
   },
+  emailConfirmationToken: {
+    type: String,
+  },
+  emailConfirmationExpires: {
+    type: Date,
+  },
   photo: {
     type: String,
   },
@@ -76,6 +82,10 @@ const userSchema = new mongoose.Schema({
   active: {
     type: Boolean,
     default: true,
+    select: false,
+  },
+  registered: {
+    type: Boolean,
     select: false,
   },
 });
@@ -183,6 +193,20 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
   return resetToken;
+};
+
+userSchema.methods.createEmailConfirmationToken = function () {
+  const confirmationToken = crypto.randomBytes(32).toString('hex');
+
+  this.emailConfirmationToken = crypto
+    .createHash('sha256')
+    .update(confirmationToken)
+    .digest('hex');
+
+  // expires in 30 minutes from now
+  this.emailConfirmationExpires = Date.now() + 30 * 60 * 1000;
+
+  return confirmationToken;
 };
 
 const User = mongoose.model('User', userSchema);

@@ -26,15 +26,83 @@ const createAndSendWebToken = (statusCode, user, response) => {
 };
 
 exports.signUp = catchHandler(async (request, response, next) => {
+  // 1) get data from request body
+  const { name, username, email, password, passwordConfirm } = request.body;
+
+  // 2) create user by that data
   const newUser = await User.create({
-    name: request.body.name,
-    username: request.body.username,
-    email: request.body.email,
-    password: request.body.password,
-    passwordConfirm: request.body.passwordConfirm,
+    name: name,
+    username: username,
+    email: email,
+    password: password,
+    passwordConfirm: passwordConfirm,
+    registered: false,
   });
 
-  createAndSendWebToken(201, newUser, response);
+  // 3) generate random confirmation token
+  const confirmationToken = newUser.createEmailConfirmationToken();
+  await newUser.save({ validateBeforeSave: false });
+
+  // 4) define the confirmation URL by the confirmation token and the message
+  const confirmationURL = `${request.protocol}://${request.get(
+    'host'
+  )}/api/v1/users/confirmEmail/${confirmationToken}`;
+
+  const message = `To confirm that you have access to the email address you specified at NATOURS, please click on this link: ${confirmationURL}.\nIf you haven't registered at NATOURS, please just ignore this email!`;
+
+  // 5) send email with that message
+  try {
+    await sendEmail({
+      email: newUser.email,
+      subject:
+        'Email Confirmation of Your Account at NATOURS (expires in 30 minutes)',
+      message: message,
+    });
+
+    response.status(200).json({
+      status: 'success',
+      message:
+        'We sent a link to your email address in order to register your account. Please check your email inbox!',
+    });
+  } catch (error) {
+    newUser.emailConfirmationToken = undefined;
+    newUser.emailConfirmationExpires = undefined;
+    await newUser.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError(
+        'An error occurred while sending the email. Please try again later.',
+        500
+      )
+    );
+  }
+});
+
+exports.confirmEmail = catchHandler(async (request, response, next) => {
+  // 1) encrypt token of URL parameters
+  const confirmationToken = crypto
+    .createHash('sha256')
+    .update(request.params.token)
+    .digest('hex');
+
+  // 2) get user based on encrypted token
+  const user = await User.findOne({
+    emailConfirmationToken: confirmationToken,
+    emailConfirmationExpires: { $gte: Date.now() },
+  });
+
+  // 3) check if there is such a user
+  if (!user)
+    return next(new AppError('Token is either invalid or has expired.', 400));
+
+  // 4) remove the passwordResetToken and its expiring date and set the user's active status to true
+  user.registered = true;
+  user.emailConfirmationToken = undefined;
+  user.emailConfirmationExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  // 5) send JWT to client
+  createAndSendWebToken(201, user, response);
 });
 
 exports.logIn = catchHandler(async (request, response, next) => {
@@ -135,7 +203,7 @@ exports.forgotPassword = catchHandler(async (request, response, next) => {
   try {
     await sendEmail({
       email: user.email,
-      subject: 'Your Password Reset Token (expires in 10 minutes)',
+      subject: 'Your Password Reset at NATOURS (expires in 10 minutes)',
       message: message,
     });
 
@@ -158,12 +226,13 @@ exports.forgotPassword = catchHandler(async (request, response, next) => {
 });
 
 exports.resetPassword = catchHandler(async (request, response, next) => {
-  // 1) get user by token
+  // 1) encrypt token from URL parameters
   const encryptedToken = crypto
     .createHash('sha256')
     .update(request.params.token)
     .digest('hex');
 
+  // 2) get user by encrypted token
   const user = await User.findOne({
     passwordResetToken: encryptedToken,
     passwordResetExpires: { $gte: Date.now() },
