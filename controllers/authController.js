@@ -78,17 +78,20 @@ exports.logIn = catchHandler(async (request, response, next) => {
     user.passwordFailures += 1;
     await user.save({ validateBeforeSave: false });
     // 6) if it were too many failed attempts, set prohibition time
-    if (user.tooManyFailedAttempts(5)) {
-      if (user.tooManyFailedAttempts(8)) {
+    if (user.tooManyFailedAttempts(6)) {
+      if (user.tooManyFailedAttempts(10)) {
+        // 8 hours
+        user.passwordProhibition = Date.now() + 8 * 60 * 60 * 1000;
+      } else if (user.tooManyFailedAttempts(9)) {
         // 4 hours
         user.passwordProhibition = Date.now() + 4 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(7)) {
+      } else if (user.tooManyFailedAttempts(8)) {
         // 2 hours
         user.passwordProhibition = Date.now() + 2 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(6)) {
+      } else if (user.tooManyFailedAttempts(7)) {
         // 1 hour
         user.passwordProhibition = Date.now() + 1 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(5)) {
+      } else {
         // 1/2 hour
         user.passwordProhibition = Date.now() + (1 / 2) * 60 * 60 * 1000;
       }
