@@ -2,6 +2,8 @@
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 
 const AppError = require('./utils/appError');
@@ -25,10 +27,12 @@ removeUnregistered();
 
 // set security HTTP headers
 app.use(helmet());
+
 // log the whole request (development)
 if (process.env.NOD_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
 // limit requests coming from the same IP
 const limiter = rateLimit({
   max: 150,
@@ -36,10 +40,19 @@ const limiter = rateLimit({
   message: 'Too many requests. Please try again in an hour.',
 });
 app.use('/api', limiter);
+
 // parse and read data from the body
 app.use(express.json({ limit: '10kb' }));
+
+// data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// data sanitization against XSS attacks
+app.use(xss());
+
 // serving static files
 app.use(express.static(`${__dirname}/public`));
+
 // individual middleware
 app.use((request, response, next) => {
   // reset state for checking if there was already an error

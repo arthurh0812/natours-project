@@ -3,7 +3,7 @@ const AppError = require('../utils/appError');
 const state = require('../utils/state');
 
 const handleCastErrorDB = (error) => {
-  const message = `Invalid ${error.path}: ${error.value}.`;
+  const message = `Invalid ${error.path}: ${JSON.stringify(error.value)}`;
   return new AppError(message, 400);
 };
 
