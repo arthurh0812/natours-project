@@ -13,10 +13,12 @@ const User = require('./models/userModel');
 const app = express();
 
 // REMOVING ALL UNREGISTERED ACCOUNTS WHOSE CONFIRMATION HAS EXPIRED (every 30 min)
-setTimeout(async function removeUnregistered() {
+async function removeUnregistered() {
   await User.deleteMany({ emailConfirmationExpires: { $lte: Date.now() } });
   setTimeout(removeUnregistered, 30 * 60 * 1000);
-}, 0);
+}
+
+removeUnregistered();
 
 // 1.) MIDDLEWARES
 if (process.env.NOD_ENV === 'development') {
