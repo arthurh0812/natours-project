@@ -7,9 +7,16 @@ const state = require('./utils/state');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const User = require('./models/userModel');
 
 // EXPRESS
 const app = express();
+
+// REMOVING ALL UNREGISTERED ACCOUNTS WHOSE CONFIRMATION HAS EXPIRED (every 30 min)
+setTimeout(async function removeUnregistered() {
+  await User.deleteMany({ emailConfirmationExpires: { $lte: Date.now() } });
+  setTimeout(removeUnregistered, 30 * 60 * 1000);
+}, 0);
 
 // 1.) MIDDLEWARES
 if (process.env.NOD_ENV === 'development') {
