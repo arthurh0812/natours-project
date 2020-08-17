@@ -16,6 +16,21 @@ const signWebToken = (ID) => {
 const createAndSendWebToken = (statusCode, user, response) => {
   const token = signWebToken(user._id);
 
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    secure: true,
+    httpOnly: true,
+  };
+
+  if (process.env.NODE_ENV === 'development') cookieOptions.secure = false;
+
+  response.cookie('jwt', token, cookieOptions);
+
+  // don't show password in output
+  if (user.password) user.password = undefined;
+
   response.status(statusCode).json({
     status: 'success',
     token: token,
