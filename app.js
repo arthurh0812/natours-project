@@ -30,7 +30,7 @@ removeUnregistered();
 app.use(helmet());
 
 // log the whole request (development)
-if (process.env.NOD_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
