@@ -16,6 +16,8 @@ exports.getAllReviews = catchHandler(async (request, response, next) => {
 });
 
 exports.createReview = catchHandler(async (request, response, next) => {
+  if (!request.body.tour) request.body.tour = request.params.tourId;
+  if (!request.body.author) request.body.author = request.user._id;
   const newReview = await Review.create(request.body);
 
   response.status(201).json({

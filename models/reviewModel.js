@@ -24,12 +24,10 @@ const reviewSchema = new mongoose.Schema(
     },
     tour: {
       type: mongoose.SchemaTypes.ObjectId,
-      ref: 'Tour',
       required: [true, 'Review must belong to a tour'],
     },
     author: {
       type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User',
       required: [true, 'Review must have an author'],
     },
   },
@@ -51,7 +49,8 @@ reviewSchema.pre(/^find/, function (next) {
   // });
   this.populate({
     path: 'author',
-    select: 'name photo',
+    model: 'User',
+    select: 'username photo',
   });
   next();
 });

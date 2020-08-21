@@ -111,7 +111,6 @@ const tourSchema = new mongoose.Schema(
     guides: [
       {
         type: mongoose.SchemaTypes.ObjectId,
-        ref: 'User',
       },
     ],
     secretTour: {
@@ -159,6 +158,7 @@ tourSchema.pre(/^find/, function (next) {
 tourSchema.pre(/^find/, function (next) {
   this.populate({
     path: 'guides',
+    model: 'User',
     select:
       '-__v -passwordChangedAt -passwordFailures -usernameChangedAt -active -registered',
   });
