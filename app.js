@@ -12,6 +12,7 @@ const state = require('./utils/state');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 const User = require('./models/userModel');
 
 // EXPRESS
@@ -81,6 +82,7 @@ app.use((request, response, next) => {
 // 2.) ROUTING
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 // all other invalid routes
 app.all('*', (request, response, next) => {

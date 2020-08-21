@@ -110,7 +110,7 @@ const tourSchema = new mongoose.Schema(
     ],
     guides: [
       {
-        type: mongoose.Schema.ObjectId,
+        type: mongoose.SchemaTypes.ObjectId,
         ref: 'User',
       },
     ],
@@ -127,7 +127,13 @@ const tourSchema = new mongoose.Schema(
 
 // VIRTUAL PROPERTIES
 tourSchema.virtual('durationWeeks').get(function () {
-  return this.duration / 7;
+  if (this.duration) return this.duration / 7;
+});
+// VIRTUAL POPULATE
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id',
 });
 
 // DOCUMENT MIDDLEWARE
