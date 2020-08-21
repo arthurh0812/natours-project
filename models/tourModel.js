@@ -150,6 +150,14 @@ tourSchema.pre(/^find/, function (next) {
   this.startTime = Date.now();
   next();
 });
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select:
+      '-__v -passwordChangedAt -passwordFailures -usernameChangedAt -active -registered',
+  });
+  next();
+});
 // after find()
 tourSchema.post('find', function (docs, next) {
   docs.queryTime = Date.now() - this.startTime;
