@@ -4,7 +4,10 @@ const Review = require('../models/reviewModel');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 
 exports.getAllReviews = catchHandler(async (request, response, next) => {
-  const reviews = await Review.find();
+  let filter = {};
+  if (request.params.tourId) filter = { tour: request.params.tourId };
+
+  const reviews = await Review.find(filter);
 
   response.status(200).json({
     status: 'sucess',

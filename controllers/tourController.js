@@ -83,7 +83,6 @@ exports.getAllTours = catchHandler(async (request, response, next) => {
 });
 
 exports.getSpecificTour = catchHandler(async (request, response, next) => {
-  // const specificTour = await Tour.findOne({ _id: request.params.id });
   const specificTour = await Tour.findOne({ _id: request.params.id }).populate(
     'reviews'
   );
