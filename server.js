@@ -27,13 +27,18 @@ DBConnetionString = DBConnetionString.replace(
 );
 
 // 1.) CONNECTING TO DATABASE
+const mongoDBConnectionOptions = {
+  useUnifiedTopology: false,
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+};
+
+if (process.env.NODE_ENV === 'production')
+  mongoDBConnectionOptions.autoIndex = false;
+
 mongoose
-  .connect(DBConnetionString, {
-    useUnifiedTopology: false,
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-  })
+  .connect(DBConnetionString, mongoDBConnectionOptions)
   .then(() => console.log(`DB connection succesful!`));
 
 // 2.) STARTING SERVER
