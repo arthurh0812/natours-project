@@ -1,8 +1,9 @@
 /* eslint-disable array-callback-return */
 // MODULES
 const User = require('../models/userModel');
-const { catchHandler } = require('../utils/catchFunction');
 const AppError = require('../utils/appError');
+const { catchHandler } = require('../utils/catchFunction');
+const factory = require('./handlerFactory');
 
 const filterObj = (obj, ...fields) => {
   const newObject = {};
@@ -145,9 +146,4 @@ exports.updateUser = (request, response) => {
   });
 };
 
-exports.deleteUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
+exports.deleteUser = factory.deleteOne(User);

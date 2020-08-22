@@ -171,10 +171,8 @@ tourSchema.post('find', function (docs, next) {
 });
 // after findOne(), findOneAndUpdate(), findOneAndDelete()
 tourSchema.post(/^findOne/, function (doc, next) {
-  if (!doc && !state.alreadyError)
-    return next(new AppError('No tour found with that ID', 404));
-  doc.queryTime = Date.now() - this.startTime;
-  next();
+  if (doc) doc.queryTime = Date.now() - this.startTime;
+  return next();
 });
 
 // AGGREGATION MIDDLEWARE

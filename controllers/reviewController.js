@@ -1,7 +1,8 @@
 // MODULES
 const Review = require('../models/reviewModel');
 // const APIFeatures = require('../utils/apiFeatures');
-const { catchHandler, catchParam } = require('../utils/catchFunction');
+const { catchHandler } = require('../utils/catchFunction');
+const factory = require('./handlerFactory');
 
 exports.getAllReviews = catchHandler(async (request, response, next) => {
   let filter = {};
@@ -30,3 +31,5 @@ exports.createReview = catchHandler(async (request, response, next) => {
     },
   });
 });
+
+exports.deleteReview = factory.deleteOne(Review);

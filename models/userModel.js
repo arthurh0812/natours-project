@@ -126,10 +126,8 @@ userSchema.post('find', function (docs, next) {
 });
 
 // after .findOneAndUpdate(), .findOneAndDelete()
-userSchema.post(/^findOneAnd/, function (doc, next) {
-  if (!doc && !state.alreadyError)
-    return next(new AppError('No user found with that ID', 404));
-  doc.queryTime = Date.now() - this.startTime;
+userSchema.post(/^findOne/, function (doc, next) {
+  if (doc) doc.queryTime = Date.now() - this.startTime;
   return next();
 });
 

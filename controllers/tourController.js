@@ -3,6 +3,8 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
+const factory = require('./handlerFactory');
+const AppError = require('../utils/appError');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -87,7 +89,8 @@ exports.getSpecificTour = catchHandler(async (request, response, next) => {
     'reviews'
   );
 
-  if (!specificTour) return;
+  if (!specificTour)
+    return next(new AppError('No document found with that ID!', 404));
 
   response.status(200).json({
     status: 'success',
@@ -134,17 +137,19 @@ exports.updateTour = catchHandler(async (request, response, next) => {
   });
 });
 
-exports.deleteTour = catchHandler(async (request, response, next) => {
-  const tour = await Tour.findOneAndDelete({ _id: request.params.id });
+exports.deleteTour = factory.deleteOne(Tour);
 
-  if (!tour) return;
+// exports.deleteTour = catchHandler(async (request, response, next) => {
+//   const tour = await Tour.findOneAndDelete({ _id: request.params.id });
 
-  response.status(204).json({
-    status: 'success',
-    timeMilliseconds: tour.queryTime,
-    deletedAt: request.requestTime,
-  });
-});
+//   if (!tour) return;
+
+//   response.status(204).json({
+//     status: 'success',
+//     timeMilliseconds: tour.queryTime,
+//     deletedAt: request.requestTime,
+//   });
+// });
 
 exports.getTourStats = catchHandler(async (request, response, next) => {
   const stats = await Tour.aggregate([
