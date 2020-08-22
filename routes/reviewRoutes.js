@@ -9,20 +9,23 @@ const router = express.Router({ mergeParams: true });
 // ROUTES
 router
   .route('/')
-  .get(authController.protect, reviewController.getAllReviews)
+  .get(
+    authController.protect,
+    reviewController.setFilter,
+    reviewController.getAllReviews
+  )
   .post(
     authController.protect,
     authController.restrictTo('user'),
+    reviewController.setTourUserIds,
     reviewController.createReview
   );
 
 router
   .route('/:id')
-  .delete(
-    authController.protect,
-    authController.restrictTo('admin'),
-    reviewController.deleteReview
-  );
+  .get(authController.protect, reviewController.getReview)
+  .patch(authController.protect, reviewController.updateReview)
+  .delete(authController.protect, reviewController.deleteReview);
 
 // 3.) EXPORT ROUTER
 module.exports = router;

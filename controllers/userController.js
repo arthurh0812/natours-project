@@ -5,6 +5,7 @@ const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
 
+// FUNCTIONS
 const filterObj = (obj, ...fields) => {
   const newObject = {};
   Object.keys(obj).forEach((el) => {
@@ -13,22 +14,10 @@ const filterObj = (obj, ...fields) => {
   return newObject;
 };
 
-// 1.) EXPORT ROUTE HANDLERS
-exports.getAllUsers = catchHandler(async (request, response, next) => {
-  // PROCESSING QUERY
-  const users = await User.find();
-
-  // SENDING RESPONSE
-  response.status(200).json({
-    status: 'success',
-    results: users.length,
-    data: {
-      users: users,
-    },
-    timeMilliseconds: users.queryTime,
-    requestedAt: request.requestTime,
-  });
-});
+// ROUTE HANDLERS
+exports.createUser = (request, response, next) => {
+  next(new AppError(`This route doesn't exist. Please use /signup!`, 400));
+};
 
 exports.updateMe = catchHandler(async (request, response, next) => {
   // 1) check if user posts password or username data
@@ -125,25 +114,11 @@ exports.deleteMe = catchHandler(async (request, response, next) => {
   });
 });
 
-exports.getSpecificUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
+exports.getAllUsers = factory.getAll(User);
 
-exports.createUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
+exports.getSpecificUser = factory.getOne(User);
 
-exports.updateUser = (request, response) => {
-  response.status(500).json({
-    status: 'error',
-    message: 'this route is not yet defined',
-  });
-};
+// !Do not change passwords or usernames with this!
+exports.updateUser = factory.updateOne(User);
 
 exports.deleteUser = factory.deleteOne(User);

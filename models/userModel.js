@@ -4,7 +4,6 @@ const validator = require('validator');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
-const state = require('../utils/state');
 
 // SCHEMA
 const userSchema = new mongoose.Schema({
@@ -115,16 +114,18 @@ userSchema.pre('save', function (next) {
 // QUERY MIDDLEWARE
 // before .find(), .findOne(), .findById() etc.
 userSchema.pre(/^find/, function (next) {
-  this.find({ secretTour: { $ne: true }, active: { $ne: false } });
+  this.find({
+    secretTour: { $ne: true },
+    active: { $ne: false },
+  });
   this.startTime = Date.now();
-  return next();
+  next();
 });
 // after .find()
 userSchema.post('find', function (docs, next) {
   docs.queryTime = Date.now() - this.startTime;
-  return next();
+  next();
 });
-
 // after .findOneAndUpdate(), .findOneAndDelete()
 userSchema.post(/^findOne/, function (doc, next) {
   if (doc) doc.queryTime = Date.now() - this.startTime;

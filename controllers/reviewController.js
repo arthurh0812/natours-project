@@ -1,35 +1,29 @@
 // MODULES
 const Review = require('../models/reviewModel');
-// const APIFeatures = require('../utils/apiFeatures');
-const { catchHandler } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
 
-exports.getAllReviews = catchHandler(async (request, response, next) => {
-  let filter = {};
-  if (request.params.tourId) filter = { tour: request.params.tourId };
+// MIDDLEWARE FUNCTIONS
+exports.setFilter = (request, response, next) => {
+  request.filterObj = {};
+  if (request.params.tourId)
+    request.filterObj = { tour: request.params.tourId };
+  next();
+};
 
-  const reviews = await Review.find(filter);
-
-  response.status(200).json({
-    status: 'sucess',
-    results: reviews.length,
-    data: {
-      reviews: reviews,
-    },
-  });
-});
-
-exports.createReview = catchHandler(async (request, response, next) => {
+exports.setTourUserIds = (request, response, next) => {
+  // set the tour and author id
   if (!request.body.tour) request.body.tour = request.params.tourId;
   if (!request.body.author) request.body.author = request.user._id;
-  const newReview = await Review.create(request.body);
+  next();
+};
 
-  response.status(201).json({
-    status: 'success',
-    data: {
-      review: newReview,
-    },
-  });
-});
+// ROUTE HANDLERS
+exports.getAllReviews = factory.getAll(Review);
+
+exports.getReview = factory.getOne(Review);
+
+exports.createReview = factory.createOne(Review);
+
+exports.updateReview = factory.updateOne(Review);
 
 exports.deleteReview = factory.deleteOne(Review);

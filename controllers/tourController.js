@@ -1,10 +1,8 @@
 /* eslint-disable array-callback-return */
 // MODULES
 const Tour = require('../models/tourModel');
-const APIFeatures = require('../utils/apiFeatures');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
-const AppError = require('../utils/appError');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -53,103 +51,15 @@ exports.aliasTopTours = catchParam(async (request, response, next, type) => {
 });
 
 // ROUTE HANDLERS
-exports.getAllTours = catchHandler(async (request, response, next) => {
-  let flag = true;
-  // PROCESSING QUERY
-  const tours = await new APIFeatures(
-    Tour.find((error, result) => {
-      if (error) {
-        flag = false;
-        next(error);
-      }
-    }),
-    request.query
-  )
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate().query;
+exports.getAllTours = factory.getAll(Tour);
 
-  if (!flag) return;
+exports.getSpecificTour = factory.getOne(Tour, { path: 'reviews' });
 
-  // SENDING RESPONSE
-  response.status(200).json({
-    status: 'success',
-    results: tours.length,
-    data: {
-      tours: tours,
-    },
-    timeMilliseconds: tours.queryTime,
-    requestedAt: request.requestTime,
-  });
-});
+exports.createTour = factory.createOne(Tour);
 
-exports.getSpecificTour = catchHandler(async (request, response, next) => {
-  const specificTour = await Tour.findOne({ _id: request.params.id }).populate(
-    'reviews'
-  );
-
-  if (!specificTour)
-    return next(new AppError('No document found with that ID!', 404));
-
-  response.status(200).json({
-    status: 'success',
-    data: {
-      tour: specificTour,
-    },
-    timeMilliseconds: specificTour.queryTime,
-    requestedAt: request.requestTime,
-  });
-});
-
-exports.createTour = catchHandler(async (request, response, next) => {
-  const newTour = await Tour.create(request.body);
-
-  response.status(201).json({
-    status: 'success',
-    data: {
-      tour: newTour,
-    },
-    timeMilliseconds: newTour.creationTime,
-    createdAt: request.requestTime,
-  });
-});
-
-exports.updateTour = catchHandler(async (request, response, next) => {
-  const tour = await Tour.findOneAndUpdate(
-    { _id: request.params.id },
-    request.body,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
-
-  if (!tour) return;
-
-  response.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-    timeMilliseconds: tour.queryTime,
-    updatedAt: request.requestTime,
-  });
-});
+exports.updateTour = factory.updateOne(Tour);
 
 exports.deleteTour = factory.deleteOne(Tour);
-
-// exports.deleteTour = catchHandler(async (request, response, next) => {
-//   const tour = await Tour.findOneAndDelete({ _id: request.params.id });
-
-//   if (!tour) return;
-
-//   response.status(204).json({
-//     status: 'success',
-//     timeMilliseconds: tour.queryTime,
-//     deletedAt: request.requestTime,
-//   });
-// });
 
 exports.getTourStats = catchHandler(async (request, response, next) => {
   const stats = await Tour.aggregate([
