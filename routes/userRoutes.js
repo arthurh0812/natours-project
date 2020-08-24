@@ -7,6 +7,7 @@ const authController = require('../controllers/authController');
 const router = express.Router();
 
 // 2.) DEFINE AND NAVIGATE TO ROUTES
+// AUTHORIZATION
 router.post('/signup', authController.signUp);
 router.get('/confirmEmail/:token', authController.confirmEmail);
 router.post('/login', authController.logIn);
@@ -22,9 +23,16 @@ router.patch(
   authController.protect,
   userController.changeUsername
 );
+// ME-ROUTES
+router.get(
+  '/me',
+  authController.protect,
+  userController.getMe,
+  userController.getSpecificUser
+);
 router.patch('/updateMe', authController.protect, userController.updateMe);
 router.delete('/deleteMe', authController.protect, userController.deleteMe);
-
+// DATA ROUTES
 router
   .route('/')
   .get(userController.getAllUsers)

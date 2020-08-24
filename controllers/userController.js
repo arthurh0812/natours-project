@@ -19,6 +19,11 @@ exports.createUser = (request, response, next) => {
   next(new AppError(`This route doesn't exist. Please use /signup!`, 400));
 };
 
+exports.getMe = (request, response, next) => {
+  request.params.id = request.user._id;
+  next();
+};
+
 exports.updateMe = catchHandler(async (request, response, next) => {
   // 1) check if user posts password or username data
   if (
