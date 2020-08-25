@@ -13,26 +13,22 @@ router.get('/confirmEmail/:token', authController.confirmEmail);
 router.post('/login', authController.logIn);
 router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);
-router.patch(
-  '/changeMyPassword',
-  authController.protect,
-  authController.changePassword
-);
-router.patch(
-  '/changeMyUsername',
-  authController.protect,
-  userController.changeUsername
-);
+
+// user has to be logged in for all routes coming after this middleware
+router.use(authController.protect);
+
+router.patch('/changeMyPassword', authController.changePassword);
+router.patch('/changeMyUsername', userController.changeUsername);
+
 // ME-ROUTES
-router.get(
-  '/me',
-  authController.protect,
-  userController.getMe,
-  userController.getSpecificUser
-);
-router.patch('/updateMe', authController.protect, userController.updateMe);
-router.delete('/deleteMe', authController.protect, userController.deleteMe);
+router.get('/me', userController.getMe, userController.getSpecificUser);
+router.patch('/updateMe', userController.updateMe);
+router.delete('/deleteMe', userController.deleteMe);
+
 // DATA ROUTES
+// user must be admin to access the routes coming after this middleware
+router.use(authController.restrictTo('admin'));
+
 router
   .route('/')
   .get(userController.getAllUsers)

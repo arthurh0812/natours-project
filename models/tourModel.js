@@ -2,7 +2,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
-const state = require('../utils/state');
 const MonthConverter = require('../utils/monthConverter');
 const AppError = require('../utils/appError');
 

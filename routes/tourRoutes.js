@@ -14,24 +14,20 @@ router.param('aliasType', tourController.aliasTopTours);
 // CONNECTED ROUTERS
 router.use('/:tourId/reviews', reviewRouter);
 // ALIASING
-router
-  .route('/top-:aliasCount-:aliasType')
-  .get(authController.protect, tourController.getAllTours);
+router.route('/top-:aliasCount-:aliasType').get(tourController.getAllTours);
 // AGGREGATED DOCUMENTS
-router
-  .route('/stats')
-  .get(
-    authController.protect,
-    authController.restrictTo('admin'),
-    tourController.getTourStats
-  );
+router.route('/stats').get(tourController.getTourStats);
 router
   .route('/monthly-plan/:year')
-  .get(authController.protect, tourController.getMonthlyPlan);
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide', 'guide'),
+    tourController.getMonthlyPlan
+  );
 // ROUTES
 router
   .route('/')
-  .get(authController.protect, tourController.getAllTours)
+  .get(tourController.getAllTours)
   .post(
     authController.protect,
     authController.restrictTo('admin', 'lead-guide'),

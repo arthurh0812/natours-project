@@ -7,25 +7,29 @@ const authController = require('../controllers/authController');
 const router = express.Router({ mergeParams: true });
 
 // ROUTES
+// user has to be logged in to access the routes coming after this middleware
+router.use(authController.protect);
+
 router
   .route('/')
-  .get(
-    authController.protect,
-    reviewController.setFilter,
-    reviewController.getAllReviews
-  )
+  .get(reviewController.setFilter, reviewController.getAllReviews)
   .post(
-    authController.protect,
     authController.restrictTo('user'),
-    reviewController.setTourUserIds,
+    reviewController.setTourAndUserIds,
     reviewController.createReview
   );
 
 router
   .route('/:id')
-  .get(authController.protect, reviewController.getReview)
-  .patch(authController.protect, reviewController.updateReview)
-  .delete(authController.protect, reviewController.deleteReview);
+  .get(reviewController.getReview)
+  .patch(
+    authController.restrictTo('user', 'admin'),
+    reviewController.updateReview
+  )
+  .delete(
+    authController.restrictTo('user', 'admin'),
+    reviewController.deleteReview
+  );
 
 // 3.) EXPORT ROUTER
 module.exports = router;

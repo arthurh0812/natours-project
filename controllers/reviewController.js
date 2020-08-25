@@ -10,7 +10,7 @@ exports.setFilter = (request, response, next) => {
   next();
 };
 
-exports.setTourUserIds = (request, response, next) => {
+exports.setTourAndUserIds = (request, response, next) => {
   // set the tour and author id
   if (!request.body.tour) request.body.tour = request.params.tourId;
   if (!request.body.author) request.body.author = request.user._id;
