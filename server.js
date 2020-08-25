@@ -34,8 +34,13 @@ const mongoDBConnectionOptions = {
   useFindAndModify: false,
 };
 
-if (process.env.NODE_ENV === 'production')
+if (process.env.NODE_ENV === 'production') {
   mongoDBConnectionOptions.autoIndex = false;
+  mongoDBConnectionOptions.autoCreate = false;
+} else if (process.env.NODE_ENV === 'development') {
+  mongoDBConnectionOptions.autoIndex = true;
+  mongoDBConnectionOptions.autoCreate = true;
+}
 
 mongoose
   .connect(DBConnetionString, mongoDBConnectionOptions)

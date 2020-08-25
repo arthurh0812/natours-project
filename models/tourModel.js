@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
 const MonthConverter = require('../utils/monthConverter');
-const AppError = require('../utils/appError');
+// const AppError = require('../utils/appError');
 
 // SCHEMA
 const tourSchema = new mongoose.Schema(
@@ -120,6 +120,7 @@ const tourSchema = new mongoose.Schema(
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    id: false,
   }
 );
 

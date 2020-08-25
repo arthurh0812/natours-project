@@ -72,9 +72,7 @@ exports.changeUsername = catchHandler(async (request, response, next) => {
 
   if (!user)
     return next(
-      new AppError(
-        'It seems that something went wrong with your authentication. Please log in again.'
-      )
+      new AppError('It seems you are not logged in. Please log in again!')
     );
 
   // 3) check if user is allowed to change his username

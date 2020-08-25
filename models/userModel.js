@@ -3,91 +3,99 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const AppError = require('../utils/appError');
+// const AppError = require('../utils/appError');
 
 // SCHEMA
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Please provide your real name'],
-  },
-  username: {
-    type: String,
-    required: [true, 'Please provide your username'],
-    unique: true,
-  },
-  usernameChangedAt: {
-    type: Date,
-  },
-  email: {
-    type: String,
-    required: [true, 'Please provide your email'],
-    unique: true,
-    lowercase: true,
-    validate: {
-      validator: validator.isEmail,
-      message: 'Please provide a valid email',
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Please provide your real name'],
     },
-  },
-  emailConfirmationToken: {
-    type: String,
-  },
-  emailConfirmationExpires: {
-    type: Date,
-  },
-  photo: {
-    type: String,
-  },
-  role: {
-    type: String,
-    enum: ['user', 'guide', 'lead-guide', 'admin'],
-    default: 'user',
-  },
-  password: {
-    type: String,
-    required: [true, 'Please provide a password'],
-    minlength: [8, 'Your password must at least be 8 characters long'],
-    select: false,
-  },
-  passwordConfirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    validate: {
-      // THIS ONLY WORKS ON .create() OR ON .save()
-      validator: function (toConfirmPassword) {
-        return toConfirmPassword === this.password;
+    username: {
+      type: String,
+      required: [true, 'Please provide your username'],
+      unique: true,
+    },
+    usernameChangedAt: {
+      type: Date,
+    },
+    email: {
+      type: String,
+      required: [true, 'Please provide your email'],
+      unique: true,
+      lowercase: true,
+      validate: {
+        validator: validator.isEmail,
+        message: 'Please provide a valid email',
       },
-      message: 'The confirmation password has to be the equal to your password',
+    },
+    emailConfirmationToken: {
+      type: String,
+    },
+    emailConfirmationExpires: {
+      type: Date,
+    },
+    photo: {
+      type: String,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'guide', 'lead-guide', 'admin'],
+      default: 'user',
+    },
+    password: {
+      type: String,
+      required: [true, 'Please provide a password'],
+      minlength: [8, 'Your password must at least be 8 characters long'],
+      select: false,
+    },
+    passwordConfirm: {
+      type: String,
+      required: [true, 'Please confirm your password'],
+      validate: {
+        // THIS ONLY WORKS ON .create() OR ON .save()
+        validator: function (toConfirmPassword) {
+          return toConfirmPassword === this.password;
+        },
+        message:
+          'The confirmation password has to be the equal to your password',
+      },
+    },
+    passwordChangedAt: {
+      type: Date,
+    },
+    passwordFailures: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    passwordProhibition: {
+      type: Date,
+      select: false,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpires: {
+      type: Date,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+      select: false,
+    },
+    registered: {
+      type: Boolean,
+      select: false,
     },
   },
-  passwordChangedAt: {
-    type: Date,
-  },
-  passwordFailures: {
-    type: Number,
-    default: 0,
-    select: false,
-  },
-  passwordProhibition: {
-    type: Date,
-    select: false,
-  },
-  passwordResetToken: {
-    type: String,
-  },
-  passwordResetExpires: {
-    type: Date,
-  },
-  active: {
-    type: Boolean,
-    default: true,
-    select: false,
-  },
-  registered: {
-    type: Boolean,
-    select: false,
-  },
-});
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+    id: false,
+  }
+);
 
 // DOCUMENT MIDDLEWARE
 // before .save(), .create()
