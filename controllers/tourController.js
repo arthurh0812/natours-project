@@ -3,6 +3,7 @@
 const Tour = require('../models/tourModel');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
+const MonthConverter = require('../utils/monthConverter');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -143,6 +144,10 @@ exports.getMonthlyPlan = catchHandler(async (request, response, next) => {
       $limit: 12,
     },
   ]);
+
+  plan.forEach((pl) => {
+    pl.monthName = new MonthConverter(pl.month).getMonthName();
+  });
 
   response.status(200).json({
     status: 'success',

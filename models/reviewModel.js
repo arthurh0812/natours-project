@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 // const slugify = require('slugify');
 // const validator = require('validator');
+const Tour = require('./tourModel');
 // const state = require('../utils/state');
 // const MonthConverter = require('../utils/monthConverter');
 // const AppError = require('../utils/appError');
@@ -55,6 +56,31 @@ reviewSchema.pre(/^find/, function (next) {
   });
   next();
 });
+
+reviewSchema.post('save', function (doc, next) {
+  // doc points to saved review, and its constructor is the model
+  doc.constructor.calculateAverageRatings(doc.tour);
+  next();
+});
+
+reviewSchema.statics.calculateAverageRatings = async function (tourId) {
+  const stats = await this.aggregate([
+    {
+      $match: { tour: tourId },
+    },
+    {
+      $group: {
+        _id: '$tour',
+        numberRatings: { $sum: 1 },
+        averageRating: { $avg: '$rating' },
+      },
+    },
+  ]);
+  await Tour.findByIdAndUpdate(tourId, {
+    ratingsAverage: parseFloat(stats[0].averageRating.toFixed(2)),
+    ratingsQuantity: parseFloat(stats[0].numberRatings.toFixed(2)),
+  });
+};
 
 const Review = mongoose.model('Review', reviewSchema);
 

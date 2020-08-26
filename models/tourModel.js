@@ -189,10 +189,6 @@ tourSchema.pre('aggregate', function (next) {
 });
 // after .aggregate()
 tourSchema.post('aggregate', function (docs, next) {
-  docs.forEach((doc) => {
-    if (doc.month) doc.monthName = new MonthConverter(doc.month).getMonthName();
-  });
-
   docs.aggregationTime = Date.now() - this.startTime;
   next();
 });
