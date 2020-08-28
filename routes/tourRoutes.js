@@ -24,7 +24,28 @@ router
     authController.restrictTo('admin', 'lead-guide', 'guide'),
     tourController.getMonthlyPlan
   );
+
+router
+  .route('/tours-within-:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
 // ROUTES
+// user can only pass in these fields
+router.use(
+  authController.controlInput(
+    'startLocation',
+    'images',
+    'startDates',
+    'name',
+    'duration',
+    'maxGroupSize',
+    'difficulty',
+    'price',
+    'summary',
+    'description',
+    'imageCover',
+    'locations'
+  )
+);
 router
   .route('/')
   .get(tourController.getAllTours)

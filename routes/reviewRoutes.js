@@ -9,6 +9,8 @@ const router = express.Router({ mergeParams: true });
 // ROUTES
 // user has to be logged in to access the routes coming after this middleware
 router.use(authController.protect);
+// user can only pass in the review field, the rating field and the tour field
+router.use(authController.controlInput('review', 'rating', 'tour'));
 
 router
   .route('/')

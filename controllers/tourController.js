@@ -4,6 +4,7 @@ const Tour = require('../models/tourModel');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
 const MonthConverter = require('../utils/monthConverter');
+const AppError = require('../utils/appError');
 
 // MIDDLEWARE FUNCTIONS
 const possibleSortings = {
@@ -157,5 +158,32 @@ exports.getMonthlyPlan = catchHandler(async (request, response, next) => {
     },
     timeMilliseconds: plan.aggregationTime,
     requestedAt: request.requestTime,
+  });
+});
+
+exports.getToursWithin = catchHandler(async (request, response, next) => {
+  const { distance, latlng, unit } = request.params;
+  const [lat, lng] = latlng.split(',');
+
+  if (!lat || !lng)
+    return next(
+      new AppError(
+        'Please provide your latitude and longitude in the format .../center/<latitude>,<longitude>.',
+        400
+      )
+    );
+
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  const tours = await Tour.find({
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+  });
+
+  response.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours,
+    },
   });
 });
