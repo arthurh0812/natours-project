@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Tour = require('./tourModel');
 // const state = require('../utils/state');
 // const MonthConverter = require('../utils/monthConverter');
-// const AppError = require('../utils/appError');
+const AppError = require('../utils/appError');
 
 // SCHEMA
 const reviewSchema = new mongoose.Schema(
@@ -39,6 +39,9 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+// INDEXING
+reviewSchema.index({ tour: 1, author: 1 }, { unique: true });
+
 // QUERY MIDDLEWARE
 // before find
 reviewSchema.pre(/^find/, function (next) {
@@ -57,9 +60,10 @@ reviewSchema.pre(/^find/, function (next) {
   next();
 });
 
-reviewSchema.post('save', function (doc, next) {
+reviewSchema.post(/save|^findOneAnd/, async function (doc, next) {
+  if (!doc) return next();
   // doc points to saved review, and its constructor is the model
-  doc.constructor.calculateAverageRatings(doc.tour);
+  await doc.constructor.calculateAverageRatings(doc.tour);
   next();
 });
 
@@ -76,10 +80,25 @@ reviewSchema.statics.calculateAverageRatings = async function (tourId) {
       },
     },
   ]);
-  await Tour.findByIdAndUpdate(tourId, {
-    ratingsAverage: parseFloat(stats[0].averageRating.toFixed(2)),
-    ratingsQuantity: parseFloat(stats[0].numberRatings.toFixed(2)),
-  });
+  if (stats.length > 0) {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsAverage: stats[0].averageRating,
+      ratingsQuantity: stats[0].numberRatings,
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsAverage: null,
+      ratingsQuantity: 0,
+    });
+  }
+};
+
+reviewSchema.statics.checkOwnReview = async function (requestId, userId, next) {
+  const review = await this.findById(requestId);
+  if (!review)
+    return next(new AppError('No document found with that ID.', 404));
+  if (review.author._id.toString() === userId.toString()) return true;
+  return false;
 };
 
 const Review = mongoose.model('Review', reviewSchema);
