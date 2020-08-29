@@ -36,7 +36,16 @@ router
 router
   .route('/:id')
   .get(userController.getSpecificUser)
-  .patch(userController.updateUser)
+  .patch(
+    authController.controlInput(
+      'role',
+      'username',
+      'photo',
+      'active',
+      'passwordProhibition'
+    ),
+    userController.updateUser
+  )
   .delete(userController.deleteUser);
 
 // 3.) EXPORT ROUTER

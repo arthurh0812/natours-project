@@ -33,7 +33,7 @@ exports.updateMe = catchHandler(async (request, response, next) => {
   )
     return next(
       new AppError(
-        `This is route is not to change your password or your username. To change your username use a ${
+        `This is route is not to change your password or your username. To change your username use ${
           request.protocol
         }://${request.get(
           'host'
@@ -121,7 +121,6 @@ exports.getAllUsers = factory.getAll(User);
 
 exports.getSpecificUser = factory.getOne(User);
 
-// !Do not change passwords or usernames with this!
 exports.updateUser = factory.updateOne(User);
 
 exports.deleteUser = factory.deleteOne(User);
