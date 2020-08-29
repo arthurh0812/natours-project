@@ -13,6 +13,11 @@ const handleDuplicateFieldsErrorDB = (error) => {
   return new AppError(message, 400);
 };
 
+// const handleGeoExtractionErrorDB = (error) => {
+//   const message = `You have to specify the coordinates of the starting location.`;
+//   return new AppError(message, 400);
+// };
+
 const handleValidationErrorDB = (error) => {
   const errors = Object.values(error.errors).map((el) => el.message);
 
@@ -72,6 +77,10 @@ module.exports = (error, request, response, next) => {
     else if (error.code === 11000) {
       errorResp = handleDuplicateFieldsErrorDB(error);
     }
+    // GEOSPATIAL EXTRACTION ERROR
+    // else if (error.code === 16755) {
+    //   errorResp = handleGeoExtractionErrorDB(error);
+    // }
     // VALIDATION ERROR
     else if (error.name === 'ValidationError') {
       errorResp = handleValidationErrorDB(error);

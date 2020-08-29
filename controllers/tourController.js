@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable array-callback-return */
 // MODULES
 const Tour = require('../models/tourModel');
@@ -65,6 +66,24 @@ exports.aliasTopTours = catchParam(async (request, response, next, type) => {
 });
 
 // ROUTE HANDLERS
+exports.setLeadGuide = (request, response, next) => {
+  if (!request.body.guides) {
+    request.body.guides = [request.user._id];
+  } else if (!request.body.guides.includes(request.user._id)) {
+    request.body.guides.push(request.user_id);
+  }
+  next();
+};
+
+exports.ownTour = catchHandler(async (request, response, next) => {
+  if (request.user.role === 'admin') return next();
+  if (!(await Tour.checkOwnTour(request.params.id, request.user._id, next)))
+    return next(
+      new AppError('You are not permitted to perform this action.', 401)
+    );
+  next();
+});
+
 exports.getAllTours = factory.getAll(Tour);
 
 exports.getSpecificTour = factory.getOne(Tour, { path: 'reviews' });
@@ -174,7 +193,7 @@ exports.getMonthlyPlan = catchHandler(async (request, response, next) => {
 });
 
 exports.getToursWithin = catchHandler(async (request, response, next) => {
-  const { distance, latlng, unit } = request.params;
+  let { distance, latlng, unit } = request.params;
   let [lat, lng] = latlng.split(',');
   lat = parseFloat(lat);
   lng = parseFloat(lng);
@@ -186,8 +205,8 @@ exports.getToursWithin = catchHandler(async (request, response, next) => {
         400
       )
     );
-
-  if (units[unit] === undefined)
+  if (!unit) unit = 'km';
+  else if (units[unit] === undefined)
     return next(new AppError('Please enter a valid unit.', 400));
 
   const radius = distance / ((6371 * 1000) / units[unit]);
@@ -206,13 +225,14 @@ exports.getToursWithin = catchHandler(async (request, response, next) => {
 });
 
 exports.getDistances = catchHandler(async (request, response, next) => {
-  const { latlng, unit } = request.params;
+  let { latlng, unit } = request.params;
   let [lat, lng] = latlng.split(',');
   lat = parseFloat(lat);
   lng = parseFloat(lng);
 
   // check if unit is correct
-  if (units[unit] === undefined)
+  if (!unit) unit = 'km';
+  else if (units[unit] === undefined)
     return next(new AppError('Please enter a valid unit.', 400));
 
   const mutiplier = 1 / units[unit];

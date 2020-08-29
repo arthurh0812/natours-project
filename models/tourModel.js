@@ -2,10 +2,37 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
-const MonthConverter = require('../utils/monthConverter');
-// const AppError = require('../utils/appError');
+const AppError = require('../utils/appError');
 
 // SCHEMA
+const locationSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      default: 'Point',
+      enum: ['Point'],
+    },
+    coordinates: [
+      {
+        type: Number,
+        set: (value) => {
+          if (Number.isInteger(value)) return value + 0.0001;
+          return value;
+        },
+      },
+    ],
+    address: String,
+    description: String,
+    day: {
+      type: Number,
+      default: 1,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const tourSchema = new mongoose.Schema(
   {
     name: {
@@ -89,26 +116,12 @@ const tourSchema = new mongoose.Schema(
     },
     startDates: [Date],
     startLocation: {
-      type: {
-        type: String,
-        default: 'Point',
-        enum: ['Point'],
-      },
-      coordinates: [Number],
-      address: String,
-      description: String,
+      type: locationSchema,
+      required: [true, 'Each tour must have a starting location'],
     },
     locations: [
       {
-        type: {
-          type: String,
-          default: 'Point',
-          enum: ['Point'],
-        },
-        coordinates: [Number],
-        address: String,
-        description: String,
-        day: Number,
+        type: locationSchema,
       },
     ],
     guides: [
@@ -199,6 +212,15 @@ tourSchema.post('aggregate', function (docs, next) {
   docs.aggregationTime = Date.now() - this.startTime;
   next();
 });
+
+// METHODS
+tourSchema.statics.checkOwnTour = async function (requestId, userId, next) {
+  const tour = await this.findById(requestId);
+  if (!tour) return next(new AppError('No document found with that ID.', 404));
+  if (tour.guides.find((guide) => guide._id.toString() === userId.toString()))
+    return true;
+  return false;
+};
 
 // MODEL
 const Tour = mongoose.model('Tour', tourSchema);
