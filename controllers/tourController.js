@@ -6,7 +6,7 @@ const factory = require('./handlerFactory');
 const MonthConverter = require('../utils/monthConverter');
 const AppError = require('../utils/appError');
 
-// MIDDLEWARE FUNCTIONS
+// POSSIBLE SORTING TYPES
 const possibleSortings = {
   best: {
     sort: '-ratingsAverage,price',
@@ -38,6 +38,18 @@ const possibleSortings = {
   },
 };
 
+// ALLOWED UNITS (based on 1 meter)
+const units = {
+  mm: 0.0001,
+  cm: 0.01,
+  dm: 0.1,
+  m: 1,
+  km: 1000,
+  mi: 1609.34709,
+  nmi: 1852,
+};
+
+// MIDDLEWARE FUNCTIONS
 exports.aliasTopTours = catchParam(async (request, response, next, type) => {
   // ROUTE PATH MUTATIONS
   type = type.replace(/(most-rated|most-Rated)/g, 'mostrated');
@@ -65,9 +77,9 @@ exports.deleteTour = factory.deleteOne(Tour);
 
 exports.getTourStats = catchHandler(async (request, response, next) => {
   const stats = await Tour.aggregate([
-    {
-      $match: { ratingsAverage: { $gte: 4.5 } },
-    },
+    // {
+    //   $match: { ratingsAverage: { $gte: 4.5 } },
+    // },
     {
       $group: {
         _id: { $toUpper: '$difficulty' },
@@ -163,17 +175,22 @@ exports.getMonthlyPlan = catchHandler(async (request, response, next) => {
 
 exports.getToursWithin = catchHandler(async (request, response, next) => {
   const { distance, latlng, unit } = request.params;
-  const [lat, lng] = latlng.split(',');
+  let [lat, lng] = latlng.split(',');
+  lat = parseFloat(lat);
+  lng = parseFloat(lng);
 
-  if (!lat || !lng)
+  if (!(lat && lng))
     return next(
       new AppError(
-        'Please provide your latitude and longitude in the format .../center/<latitude>,<longitude>.',
+        'Please provide your latitude and longitude in the format .../center/<latitude>,<longitude>/...',
         400
       )
     );
 
-  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+  if (units[unit] === undefined)
+    return next(new AppError('Please enter a valid unit.', 400));
+
+  const radius = distance / ((6371 * 1000) / units[unit]);
 
   const tours = await Tour.find({
     startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
@@ -184,6 +201,59 @@ exports.getToursWithin = catchHandler(async (request, response, next) => {
     results: tours.length,
     data: {
       data: tours,
+    },
+  });
+});
+
+exports.getDistances = catchHandler(async (request, response, next) => {
+  const { latlng, unit } = request.params;
+  let [lat, lng] = latlng.split(',');
+  lat = parseFloat(lat);
+  lng = parseFloat(lng);
+
+  // check if unit is correct
+  if (units[unit] === undefined)
+    return next(new AppError('Please enter a valid unit.', 400));
+
+  const mutiplier = 1 / units[unit];
+
+  if (!(lat && lng))
+    return next(
+      new AppError(
+        'Please provide your latitude and longitude in the format .../distance/<latitude>,<longitude>/...',
+        400
+      )
+    );
+
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [lng, lat],
+        },
+        distanceField: 'distance',
+        distanceMultiplier: mutiplier,
+      },
+    },
+    {
+      $project: {
+        distance: 1,
+        name: 1,
+        price: 1,
+      },
+    },
+  ]);
+
+  distances.forEach((el) => {
+    el.distance = Math.round(el.distance * 1000) / 1000;
+  });
+
+  response.status(200).json({
+    status: 'success',
+    results: distances.length,
+    data: {
+      data: distances,
     },
   });
 });

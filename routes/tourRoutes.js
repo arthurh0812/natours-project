@@ -26,8 +26,11 @@ router
   );
 
 router
-  .route('/tours-within-:distance/center/:latlng/unit/:unit')
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
   .get(tourController.getToursWithin);
+
+router.route('/distances/:latlng/unit/:unit').get(tourController.getDistances);
+
 // ROUTES
 // user can only pass in these fields
 router.use(
