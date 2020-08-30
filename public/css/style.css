@@ -29,7 +29,7 @@ html {
 
 body {
   line-height: 1.6;
-  font-weight: 300;
+  font-weight: 600;
   font-family: 'Lato', sans-serif;
   color: #777;
   padding: 3rem;
@@ -830,6 +830,7 @@ body {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
+  justify-content: flex-end;
 }
 .footer__nav li {
   margin-left: 1.5rem;
@@ -908,7 +909,8 @@ body {
   align-items: center;
   -webkit-transition: all 0.2s;
   transition: all 0.2s;
-  font-weight: 400;
+  font-weight: 550;
+  letter-spacing: 0.15rem;
   background: none;
   border: none;
   cursor: pointer;
@@ -968,6 +970,9 @@ body {
   -webkit-transform: translateY(1px);
   transform: translateY(1px);
 }
+.nav__search-btn:focus {
+  outline: none;
+}
 .nav__search-btn svg {
   height: 2rem;
   width: 2rem;
@@ -976,7 +981,6 @@ body {
 .nav__search-input {
   font-family: inherit;
   font-weight: inherit;
-  text-transform: uppercase;
   background: none;
   border: none;
   font-size: 1.5rem;
@@ -1003,6 +1007,9 @@ body {
   outline: none;
   width: 25rem;
   border-bottom: 1px solid currentColor;
+}
+.nav__search-input:focus::placeholder {
+  color: #f7f7f7;
 }
 .nav__user-img {
   height: 3.5rem;

@@ -22,7 +22,7 @@ exports.ownReview = async (request, response, next) => {
   // check if the author of the review is equal to the currently logged in user
   if (!(await Review.checkOwnReview(request.params.id, request.user._id, next)))
     return next(
-      new AppError('You are not permitted to perform this action.', 403)
+      new AppError('You are not permitted to perform this action.', 401)
     );
   next();
 };

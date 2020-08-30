@@ -1,4 +1,5 @@
 // MODULES
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
@@ -18,6 +19,11 @@ const User = require('./models/userModel');
 // EXPRESS
 const app = express();
 
+// defining the view engine (pug)
+app.set('view engine', 'pug');
+// defining path to views
+app.set('views', path.join(__dirname, 'views'));
+
 // remove all unregistered accounts whose confirmation has expired (every 30 min)
 async function removeUnregistered() {
   await User.deleteMany({ emailConfirmationExpires: { $lte: Date.now() } });
@@ -26,6 +32,8 @@ async function removeUnregistered() {
 removeUnregistered();
 
 // 1.) GLOBAL MIDDLEWARES
+// serving static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 // set security HTTP headers
 app.use(helmet());
@@ -67,9 +75,6 @@ app.use(
   })
 );
 
-// serving static files
-app.use(express.static(`${__dirname}/public`));
-
 // individual middleware
 app.use((request, response, next) => {
   // reset state for checking if there was already an error
@@ -80,6 +85,13 @@ app.use((request, response, next) => {
 });
 
 // 2.) ROUTING
+app.get('/', (request, response) => {
+  response.status(200).render('base', {
+    tour: 'The Forest Hiker',
+    user: 'Jonas',
+  });
+});
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
