@@ -22,7 +22,10 @@ const locationSchema = new mongoose.Schema(
       },
     ],
     address: String,
-    description: String,
+    description: {
+      type: String,
+      required: [true, 'Please name a description for the start location'],
+    },
     day: {
       type: Number,
       default: 1,
@@ -108,7 +111,16 @@ const tourSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Each tour must have an image cover'],
     },
-    images: [String],
+    images: {
+      type: [String],
+      validate: {
+        validator: function (value) {
+          return value.length >= 3;
+        },
+        message:
+          'Please name at least three pictures to let your adventurers get a better idea of your tour',
+      },
+    },
     createdAt: {
       type: Date,
       default: Date.now(),
@@ -135,8 +147,8 @@ const tourSchema = new mongoose.Schema(
     },
   },
   {
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toJSON: { getters: true, virtuals: true },
+    toObject: { getters: true, virtuals: true },
     id: false,
   }
 );
