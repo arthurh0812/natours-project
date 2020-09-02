@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 // document.addEventListener('mouseup', function (event) {
 //   if (
 //     event.target.matches(`.section-cta, .section-cta *`) &&

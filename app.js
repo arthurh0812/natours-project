@@ -38,6 +38,28 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // set security HTTP headers
 app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'", 'https://*.mapbox.com', 'https://*.stripe.com'],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      scriptSrc: [
+        "'self'",
+        'https://cdnjs.cloudflare.com',
+        'https://api.mapbox.com',
+        'https://js.stripe.com',
+        'blob:',
+      ],
+      scriptSrcAttr: "'none'",
+      imgSrc: ["'self'", 'data:'],
+      frameSrc: ["'self'", 'https://*.stripe.com'],
+      objectSrc: ["'none'"],
+      styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+      upgradeInsecureRequests: [],
+    },
+  })
+);
 
 // log the whole request (development)
 if (process.env.NODE_ENV === 'development') {

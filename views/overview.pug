@@ -1,11 +1,14 @@
 extends base
 
+block append head
+  //- script(src='/js/overview.js')
+
 block content
   main.main
     .card-container
 
       each tour in tours
-        .card
+        .card(data-slug=`${tour.slug}`)
           .card__header
             .card__picture
               .card__picture-overlay &nbsp;

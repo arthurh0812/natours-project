@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 document.addEventListener('mouseup', function (event) {
   if (
     event.target.matches(`.card__header, .card__header *`) &&
@@ -5,7 +7,7 @@ document.addEventListener('mouseup', function (event) {
   ) {
     const card = event.target.closest('.card');
 
-    const link = card.querySelector('.card__footer').querySelector('a').href;
-    window.location.href = link;
+    const cardSlug = card.dataset.slug;
+    window.location.href = `/tour/${cardSlug}`;
   }
 });

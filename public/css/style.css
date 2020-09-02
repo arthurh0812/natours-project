@@ -541,7 +541,7 @@ body {
 
 .section-map {
   position: relative;
-  height: 65rem;
+  height: 75rem;
   margin-top: calc(0px - var(--section-rotate));
 }
 
@@ -552,8 +552,16 @@ body {
   width: 100%;
 }
 
-.marker {
+.start-marker {
   background-image: url('../img/pin.png');
+  background-size: cover;
+  width: 32px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.marker {
+  background-image: url('../img/start-pin.png');
   background-size: cover;
   width: 32px;
   height: 40px;
