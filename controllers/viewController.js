@@ -16,7 +16,7 @@ exports.getOverview = catchHandler(async (request, response, next) => {
   });
 });
 
-exports.getTour = catchHandler(async (request, response) => {
+exports.getTour = catchHandler(async (request, response, next) => {
   // 1) get the tour by its slug
   const tour = await Tour.findOne({ slug: request.params.tourSlug }).populate({
     path: 'reviews',
@@ -31,5 +31,19 @@ exports.getTour = catchHandler(async (request, response) => {
     title: tour.name,
     tour: tour,
     reviews: reviews,
+  });
+});
+
+exports.getSignupForm = catchHandler(async (request, response, next) => {
+  // 1) render webpage
+  response.status(200).render('signup', {
+    title: 'Sign up for free',
+  });
+});
+
+exports.getLoginForm = catchHandler(async (request, response, next) => {
+  // 1) render webpage
+  response.status(200).render('login', {
+    title: 'Log into your Account',
   });
 });
