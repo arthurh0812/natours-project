@@ -2,18 +2,19 @@
 const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
+const FailedLoginAttempt = require('../models/failedLoginAttemptModel');
 const User = require('../models/userModel');
 const sendEmail = require('../utils/email');
 const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 
-const signWebToken = (ID) => {
-  return jwt.sign({ id: ID }, process.env.JWT_SECRETKEY, {
+const signWebToken = (value) => {
+  return jwt.sign({ id: value }, process.env.JWT_SECRETKEY, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
-const createAndSendWebToken = (statusCode, user, response) => {
+const createAndSendAuthToken = (statusCode, user, response) => {
   const token = signWebToken(user._id);
 
   const cookieOptions = {
@@ -26,7 +27,7 @@ const createAndSendWebToken = (statusCode, user, response) => {
 
   if (process.env.NODE_ENV === 'development') cookieOptions.secure = false;
 
-  response.cookie('jwt', token, cookieOptions);
+  response.cookie('auth', token, cookieOptions);
 
   // don't show password in output
   if (user.password) user.password = undefined;
@@ -117,18 +118,26 @@ exports.confirmEmail = catchHandler(async (request, response, next) => {
   await user.save({ validateBeforeSave: false });
 
   // 5) send JWT to client
-  createAndSendWebToken(201, user, response);
+  createAndSendAuthToken(201, user, response);
 });
 
 exports.logIn = catchHandler(async (request, response, next) => {
   // login prohibition function
-  const prohibitLogin = (user) =>
+  const prohibitLogin = (failedAttempt) =>
     next(
       new AppError(
-        `You had too many incorrect password attempts. Please wait until ${user.passwordProhibition} to login again.`,
+        `You had too many incorrect password attempts. Please wait until ${failedAttempt.loginProhibitionTime} to login again.`,
         401
       )
     );
+
+  let fail = await FailedLoginAttempt.findOne({
+    client: request.ipInfo.ip,
+  });
+
+  if (fail && fail.isProhibitedLogin()) {
+    return prohibitLogin(fail);
+  }
 
   const { username, email, password } = request.body;
 
@@ -148,49 +157,49 @@ exports.logIn = catchHandler(async (request, response, next) => {
   }).select('+password +passwordFailures +passwordProhibition');
 
   if (!user)
-    return next(new AppError('Incorrect username or email or password.'));
-
-  // 3) check if user is allowed to login
-  if (user.isProhibitedLogin()) {
-    return prohibitLogin(user);
-  }
+    return next(new AppError('Incorrect username or email or password.', 401));
 
   // 4) check if given password is correct
   if (!(await user.correctPassword(password, user.password))) {
-    // 5) increment failed attempts count by 1
-    user.passwordFailures += 1;
-    await user.save({ validateBeforeSave: false });
-    // 6) if it were too many failed attempts, set prohibition time
-    if (user.tooManyFailedAttempts(6)) {
-      if (user.tooManyFailedAttempts(10)) {
-        // 8 hours
-        user.passwordProhibition = Date.now() + 8 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(9)) {
-        // 4 hours
-        user.passwordProhibition = Date.now() + 4 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(8)) {
-        // 2 hours
-        user.passwordProhibition = Date.now() + 2 * 60 * 60 * 1000;
-      } else if (user.tooManyFailedAttempts(7)) {
-        // 1 hour
-        user.passwordProhibition = Date.now() + 1 * 60 * 60 * 1000;
-      } else {
-        // 1/2 hour
-        user.passwordProhibition = Date.now() + (1 / 2) * 60 * 60 * 1000;
-      }
-      await user.save({ validateBeforeSave: false });
-      return prohibitLogin(user);
+    if (!fail)
+      fail = new FailedLoginAttempt({
+        count: 1,
+        client: request.ipInfo.ip,
+      });
+    else {
+      fail.count += 1;
     }
+    // set the prohibition time acording to count
+    if (fail.count >= 10) {
+      // 8 hours
+      fail.loginProhibitionTime = Date.now() + 8 * 60 * 60 * 1000;
+    } else if (fail.count === 9) {
+      // 4 hours
+      fail.loginProhibitionTime = Date.now() + 4 * 60 * 60 * 1000;
+    } else if (fail.count === 8) {
+      // 4 hours
+      fail.loginProhibitionTime = Date.now() + 2 * 60 * 60 * 1000;
+    } else if (fail.count === 7) {
+      // 4 hours
+      fail.loginProhibitionTime = Date.now() + 1 * 60 * 60 * 1000;
+    } else if (fail.count === 6) {
+      // 4 hours
+      fail.loginProhibitionTime = Date.now() + (1 / 2) * 60 * 60 * 1000;
+    }
+
+    // save changes
+    await fail.save();
+
     return next(new AppError('Incorrect username or email or password', 401));
   }
 
   // 7) if password was correct, reset failure count and remove prohibition time
-  user.passwordFailures = 0;
-  user.passwordProhibition = undefined;
-  await user.save({ validateBeforeSave: false });
+  fail.count = 0;
+  fail.loginProhibitionTime = undefined;
+  await fail.save();
 
   // 8) if everything is ok, send token to client
-  createAndSendWebToken(200, user, response);
+  createAndSendAuthToken(200, user, response);
 });
 
 exports.forgotPassword = catchHandler(async (request, response, next) => {
@@ -263,7 +272,7 @@ exports.resetPassword = catchHandler(async (request, response, next) => {
   await user.save();
 
   // 4) log user in and send JWT to client
-  createAndSendWebToken(200, user, response);
+  createAndSendAuthToken(200, user, response);
 });
 
 exports.changePassword = catchHandler(async (request, response, next) => {
@@ -282,7 +291,7 @@ exports.changePassword = catchHandler(async (request, response, next) => {
   await user.save();
 
   // 4) log user in, send JWT
-  createAndSendWebToken(200, user, response);
+  createAndSendAuthToken(200, user, response);
 });
 
 exports.protect = catchHandler(async (request, response, next) => {
@@ -293,6 +302,8 @@ exports.protect = catchHandler(async (request, response, next) => {
     request.headers.authorization.startsWith('Bearer')
   ) {
     token = request.headers.authorization.split(' ')[1];
+  } else if (request.cookies.auth) {
+    token = request.cookies.auth;
   }
 
   if (!token) return next(new AppError('You are not logged in!', 401));
@@ -330,6 +341,42 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+// (only for rendered pages, no errors!)
+exports.isLoggedIn = catchHandler(async (request, response, next) => {
+  if (request.cookies.auth) {
+    // 1) token verification
+    const decoded = await promisify(jwt.verify)(
+      request.cookies.auth,
+      process.env.JWT_SECRETKEY
+    );
+
+    // 2) check if user still exists
+    const currentUser = await User.findById(decoded.id);
+
+    if (!currentUser) return next();
+
+    // 4) check if user changed password after token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat * 1000)) return next();
+
+    // 5) there is a logged in user
+    response.locals.user = currentUser;
+  }
+  next();
+});
+// (only for rendered pages, no errors!)
+exports.tooManyFailedAttempts = catchHandler(
+  async (request, response, next) => {
+    const fail = await FailedLoginAttempt.findOne({
+      client: request.ipInfo.ip,
+    });
+
+    if (fail && fail.isProhibitedLogin()) {
+      response.locals.loginProhibition = fail;
+    }
+    next();
+  }
+);
 
 exports.controlInput = (...inputFields) => {
   return (request, response, next) => {

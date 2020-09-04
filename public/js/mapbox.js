@@ -1,10 +1,9 @@
 /* eslint-disable */
 
-const locations = JSON.parse(document.getElementById('map').dataset.locations);
+const mapElement = document.getElementById('map');
+const locations = JSON.parse(mapElement.dataset.locations);
 
-const startLocation = JSON.parse(
-  document.getElementById('map').dataset.startlocation
-);
+const startLocation = JSON.parse(mapElement.dataset.startlocation);
 
 locations.unshift(startLocation);
 
@@ -20,6 +19,8 @@ var map = new mapboxgl.Map({
 });
 
 const bounds = new mapboxgl.LngLatBounds();
+
+const markers = [];
 
 locations.forEach((loc, index) => {
   // create marker with class 'marker'
@@ -45,11 +46,13 @@ locations.forEach((loc, index) => {
     )
     .addTo(map);
 
-  // start marker should be popped up
-  if (index === 0) marker.togglePopup();
+  // marker should be popped up
+  marker.togglePopup();
 
   // extend map bounds to include current location
   bounds.extend(loc.coordinates);
+
+  markers.push(marker);
 });
 
 map.fitBounds(bounds, {
@@ -59,4 +62,23 @@ map.fitBounds(bounds, {
     right: 100,
     left: 100,
   },
+});
+
+let flag = true;
+mapElement.addEventListener('mouseenter', function (event) {
+  if (flag) {
+    markers.forEach(function (marker) {
+      marker.togglePopup();
+    });
+    flag = false;
+  }
+});
+
+document.querySelectorAll('.mapboxgl-marker').forEach(function (marker, index) {
+  marker.addEventListener('mouseenter', function (event) {
+    if (!markers[index].getPopup().isOpen()) markers[index].togglePopup();
+  });
+  marker.addEventListener('mouseleave', function (event) {
+    if (markers[index].getPopup().isOpen()) markers[index].togglePopup();
+  });
 });

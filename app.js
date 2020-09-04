@@ -1,13 +1,16 @@
 // MODULES
 const path = require('path');
 const express = require('express');
+const expressip = require('express-ip');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
+const authController = require('./controllers/authController');
 const AppError = require('./utils/appError');
 const state = require('./utils/state');
 const globalErrorHandler = require('./controllers/errorController');
@@ -41,7 +44,12 @@ app.use(helmet());
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
-      defaultSrc: ["'self'", 'https://*.mapbox.com', 'https://*.stripe.com'],
+      defaultSrc: [
+        "'self'",
+        'http://127.0.0.1:3000',
+        'https://*.mapbox.com',
+        'https://*.stripe.com',
+      ],
       baseUri: ["'self'"],
       fontSrc: ["'self'", 'https:', 'data:'],
       scriptSrc: [
@@ -76,6 +84,7 @@ app.use('/api', limiter);
 
 // parse and read data from the body
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
 
 // data sanitization against NoSQL query injection
 app.use(mongoSanitize());
@@ -97,6 +106,8 @@ app.use(
     ],
   })
 );
+// getting the users IP address
+app.use(expressip().getIpInfoMiddleware);
 
 // individual middleware
 app.use((request, response, next) => {
@@ -104,6 +115,8 @@ app.use((request, response, next) => {
   state.alreadyError = false;
   // set time as a property of request
   request.requestTime = new Date().toISOString();
+
+  // response.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3000');
   next();
 });
 
