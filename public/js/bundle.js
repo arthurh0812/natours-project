@@ -8443,18 +8443,15 @@ var login = /*#__PURE__*/function () {
               }, 500);
             }
 
-            _context.next = 13;
+            _context.next = 12;
             break;
 
           case 9:
             _context.prev = 9;
             _context.t0 = _context["catch"](2);
-            console.log(_context.t0.response.data.message);
+            if (_context.t0.response.data.message.startsWith('You had too many incorrect signin attempts.')) window.location.reload();else if (_context.t0.response.data.message) (0, _alerts.showAlert)('error', _context.t0.response.data.message);
 
-            if (_context.t0.response.data.message.startsWith('You had too many incorrect signin attempts')) {// window.location.reload();
-            } else if (_context.t0.response.data.message) (0, _alerts.showAlert)('error', _context.t0.response.data.message);
-
-          case 13:
+          case 12:
           case "end":
             return _context.stop();
         }

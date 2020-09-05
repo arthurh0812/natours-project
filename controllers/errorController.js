@@ -31,8 +31,9 @@ const handleJWTVerificationError = () =>
 const handleJWTExpiredError = () =>
   new AppError(`Your token session has expired. Please login again.`, 401);
 
-const sendErrorDev = (error, response) => {
-  response.status(error.statusCode).json({
+// A) render JSON for /api/...
+const sendBackendErrorDev = (error, request, response) => {
+  return response.status(error.statusCode).json({
     status: error.status,
     error: error,
     message: error.message,
@@ -40,33 +41,55 @@ const sendErrorDev = (error, response) => {
   });
 };
 
-const sendErrorProd = (error, response) => {
+const sendBackendErrorProd = (error, request, response) => {
   // Operational errors
   if (error.isOperational) {
-    response.status(error.statusCode).json({
+    return response.status(error.statusCode).json({
       status: error.status,
       message: error.message,
     });
   }
-  // Programming/other errors: no leak to client
-  else {
-    // 1.) log error to console
-    console.error('ERROR: ', error);
-
-    // 2.) send generic response
-    response.status(500).json({
-      status: `error`,
-      message: `Something went wrong...`,
-    });
-  }
+  // Programming/other errors
+  console.error('ERROR: ', error);
+  // generic response
+  return response.status(500).json({
+    status: 'error',
+    message: 'Something went wrong...',
+  });
 };
 
-module.exports = (error, request, response, next) => {
+// B) render ERROR PAGE
+const sendFrontendErrorDev = (error, request, response) => {
+  console.log('ERROR', error);
+  return response.status(error.statusCode).render('error', {
+    title: 'Something went wrong...',
+    msg: error.message,
+  });
+};
+
+const sendFrontendErrorProd = (error, request, response) => {
+  // Operational errors
+  if (error.isOperational) {
+    return response.status(error.statusCode).render('error', {
+      title: 'Something went wrong...',
+      msg: error.message,
+    });
+  }
+  // Programming/other errors
+  console.error('ERROR: ', error);
+  // generic response
+  return response.status(500).render('error', {
+    title: 'Something went wrong...',
+    msg: 'We will check what was wrong. Please try again later.',
+  });
+};
+
+exports.backendErrorHandler = (error, request, response, next) => {
   error.statusCode = error.statusCode || 500;
   error.status = error.status || 'error';
 
   if (process.env.NODE_ENV === 'development' && !state.alreadyError) {
-    sendErrorDev(error, response);
+    sendBackendErrorDev(error, request, response);
   } else if (process.env.NODE_ENV === 'production' && !state.alreadyError) {
     let errorResp;
     // CAST ERROR
@@ -97,8 +120,19 @@ module.exports = (error, request, response, next) => {
     else {
       errorResp = error;
     }
-
-    sendErrorProd(errorResp, response);
+    sendBackendErrorProd(errorResp, request, response);
   }
   state.alreadyError = true;
+};
+
+exports.frontendErrorHandler = (error, request, response, next) => {
+  error.statusCode = error.statusCode || 500;
+  error.status = error.status || 'error';
+
+  if (process.env.NODE_ENV === 'development') {
+    sendFrontendErrorDev(error, request, response);
+  } else if (process.env.NODE_ENV === 'production') {
+    const errorResp = error;
+    sendFrontendErrorProd(errorResp, request, response);
+  }
 };

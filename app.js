@@ -10,10 +10,12 @@ const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 
-const authController = require('./controllers/authController');
 const AppError = require('./utils/appError');
 const state = require('./utils/state');
-const globalErrorHandler = require('./controllers/errorController');
+const {
+  backendErrorHandler,
+  frontendErrorHandler,
+} = require('./controllers/errorController');
 const reviewRouter = require('./routes/reviewRoutes');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -129,9 +131,11 @@ app.use((request, response, next) => {
 
 // 2.) ROUTING
 app.use('/', viewRouter);
+app.use(frontendErrorHandler);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use(backendErrorHandler);
 
 // all other invalid routes
 app.all('*', (request, response, next) => {
@@ -145,8 +149,6 @@ app.all('*', (request, response, next) => {
     new AppError(`Could not find ${request.originalUrl} on this server!`, 404)
   );
 });
-
-app.use(globalErrorHandler);
 
 // 3.) EXPORTING THE EXPRESS APP
 module.exports = app;

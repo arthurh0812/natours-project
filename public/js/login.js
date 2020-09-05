@@ -25,14 +25,13 @@ export const login = async function (emailOrUsername, password) {
       }, 500);
     }
   } catch (error) {
-    console.log(error.response.data.message);
     if (
       error.response.data.message.startsWith(
-        'You had too many incorrect signin attempts'
+        'You had too many incorrect signin attempts.'
       )
-    ) {
-      // window.location.reload();
-    } else if (error.response.data.message)
+    )
+      window.location.reload();
+    else if (error.response.data.message)
       showAlert('error', error.response.data.message);
   }
 };

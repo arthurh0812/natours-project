@@ -394,7 +394,17 @@ exports.tooManyFailedAttempts = catchHandler(
     });
 
     if (fail && fail.isProhibitedLogin()) {
-      response.locals.loginProhibition = fail;
+      return next(
+        new AppError(
+          `You had too many incorrect signin attempts. Please wait until ${new Date(
+            fail.loginProhibitionTime
+          ).toLocaleString({
+            month: 'short',
+            year: 'numeric',
+          })} to login again.`,
+          401
+        )
+      );
     }
     next();
   }

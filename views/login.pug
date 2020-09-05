@@ -2,18 +2,15 @@ extends base
 
 block content 
   main.main
-    if (!loginProhibition)
-      .login-form
-        h2.heading-secondary.ma-bt-lg Log into your account
-        form.form
-          .form__group
-            label.form__label(for='email') Username or email address
-            input#email.form__input(type='emailOrUsername', required)
-          .form__group.ma-bt-md
-            label.form__label(for='password') Password
-            input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
-          .form__group
-            button.btn.btn--green Login
-    
-    else
-      h1= `You had too many incorrect signin attempts. Please wait until ${new Date(loginProhibition.loginProhibitionTime).toLocaleString({ month: 'short', year: 'numeric' })} to sign in again.`
+    .login-form
+      h2.heading-secondary.ma-bt-lg Log into your account
+      form.form
+        .form__group
+          label.form__label(for='email') Username or email address
+          input#email.form__input(type='emailOrUsername', required)
+        .form__group.ma-bt-md
+          label.form__label(for='password') Password
+          input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
+        .form__group
+          button.btn.btn--green Login
+
