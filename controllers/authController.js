@@ -126,7 +126,9 @@ exports.logIn = catchHandler(async (request, response, next) => {
   const prohibitLogin = (failedAttempt) =>
     next(
       new AppError(
-        `You had too many incorrect password attempts. Please wait until ${failedAttempt.loginProhibitionTime} to login again.`,
+        `You had too many incorrect signin attempts. Please wait until ${new Date(
+          failedAttempt.loginProhibitionTime
+        ).toLocaleString({ month: 'short', year: 'numeric' })} to login again.`,
         401
       )
     );
@@ -177,18 +179,23 @@ exports.logIn = catchHandler(async (request, response, next) => {
       // 4 hours
       fail.loginProhibitionTime = Date.now() + 4 * 60 * 60 * 1000;
     } else if (fail.count === 8) {
-      // 4 hours
+      // 2 hours
       fail.loginProhibitionTime = Date.now() + 2 * 60 * 60 * 1000;
     } else if (fail.count === 7) {
-      // 4 hours
+      // 1 hours
       fail.loginProhibitionTime = Date.now() + 1 * 60 * 60 * 1000;
     } else if (fail.count === 6) {
-      // 4 hours
+      // 1/2 hours
       fail.loginProhibitionTime = Date.now() + (1 / 2) * 60 * 60 * 1000;
     }
 
     // save changes
     await fail.save();
+
+    // prohibit user from logging in directly at 6th fail
+    if (fail.count >= 6) {
+      return prohibitLogin(fail);
+    }
 
     return next(new AppError('Incorrect username or email or password', 401));
   }
@@ -201,6 +208,17 @@ exports.logIn = catchHandler(async (request, response, next) => {
   // 8) if everything is ok, send token to client
   createAndSendAuthToken(200, user, response);
 });
+
+exports.logout = (request, response) => {
+  response.cookie('auth', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+
+  response.status(200).json({
+    status: 'success',
+  });
+};
 
 exports.forgotPassword = catchHandler(async (request, response, next) => {
   // 1) check if an email is specified
@@ -343,27 +361,31 @@ exports.restrictTo = (...roles) => {
 };
 
 // (only for rendered pages, no errors!)
-exports.isLoggedIn = catchHandler(async (request, response, next) => {
+exports.isLoggedIn = async (request, response, next) => {
   if (request.cookies.auth) {
-    // 1) token verification
-    const decoded = await promisify(jwt.verify)(
-      request.cookies.auth,
-      process.env.JWT_SECRETKEY
-    );
+    try {
+      // 1) token verification
+      const decoded = await promisify(jwt.verify)(
+        request.cookies.auth,
+        process.env.JWT_SECRETKEY
+      );
 
-    // 2) check if user still exists
-    const currentUser = await User.findById(decoded.id);
+      // 2) check if user still exists
+      const currentUser = await User.findById(decoded.id);
 
-    if (!currentUser) return next();
+      if (!currentUser) return next();
 
-    // 4) check if user changed password after token was issued
-    if (currentUser.changedPasswordAfter(decoded.iat * 1000)) return next();
+      // 4) check if user changed password after token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat * 1000)) return next();
 
-    // 5) there is a logged in user
-    response.locals.user = currentUser;
+      // 5) there is a logged in user
+      response.locals.user = currentUser;
+    } catch (error) {
+      return next();
+    }
   }
   next();
-});
+};
 // (only for rendered pages, no errors!)
 exports.tooManyFailedAttempts = catchHandler(
   async (request, response, next) => {

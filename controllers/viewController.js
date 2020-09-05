@@ -2,6 +2,7 @@
 const { catchHandler } = require('../utils/catchFunction');
 const Tour = require('../models/tourModel');
 const viewFunctions = require('../utils/viewFunctions');
+const AppError = require('../utils/appError');
 
 // ROUTE HANDLER
 exports.getOverview = catchHandler(async (request, response, next) => {
@@ -22,6 +23,8 @@ exports.getTour = catchHandler(async (request, response, next) => {
     path: 'reviews',
     select: 'review rating author',
   });
+
+  if (!tour) return next(new AppError('This tour does not exist.', 404));
 
   const reviews = viewFunctions.getRandomElements(tour.reviews, 15);
 

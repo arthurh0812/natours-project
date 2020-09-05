@@ -1,6 +1,9 @@
 /* eslint-disable */
 
-const login = async function (emailOrUsername, password) {
+import axios from 'axios';
+import { showAlert } from './alerts';
+
+export const login = async function (emailOrUsername, password) {
   const data = {
     password: password,
   };
@@ -16,22 +19,37 @@ const login = async function (emailOrUsername, password) {
     });
 
     if (res.data.status === 'success') {
-      alert('Signed In succesfully!');
+      showAlert('success', 'Signed In succesfully!');
       window.setTimeout(function () {
         location.assign('/');
-      }, 1500);
+      }, 500);
     }
   } catch (error) {
-    alert(error.response.message);
+    console.log(error.response.data.message);
+    if (
+      error.response.data.message.startsWith(
+        'You had too many incorrect signin attempts'
+      )
+    ) {
+      // window.location.reload();
+    } else if (error.response.data.message)
+      showAlert('error', error.response.data.message);
   }
 };
 
-document.querySelector('.form').addEventListener('submit', function (event) {
-  event.preventDefault();
+export const logout = async function () {
+  try {
+    const res = await axios({
+      method: 'GET',
+      url: 'http://127.0.0.1:3000/api/v1/users/logout',
+    });
 
-  const emailOrUsername = document.getElementById('email').value;
-
-  const password = document.getElementById('password').value;
-
-  login(emailOrUsername, password);
-});
+    if (res.data.status === 'success') window.location.reload(true);
+  } catch (error) {
+    console.log(error);
+    showAlert(
+      'error',
+      'Error signing out. Please check your internet connection!'
+    );
+  }
+};

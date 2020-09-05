@@ -16,9 +16,4 @@ block content
             button.btn.btn--green Login
     
     else
-      h1= `You had too many failed sign in attempts. Please wait until ${loginProhibition.loginProhibitionTime} to sign in again.`
-
-block scripts
-  script(src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js')
-  if (!loginProhibition)
-    script(src='/js/login.js')
+      h1= `You had too many incorrect signin attempts. Please wait until ${new Date(loginProhibition.loginProhibitionTime).toLocaleString({ month: 'short', year: 'numeric' })} to sign in again.`

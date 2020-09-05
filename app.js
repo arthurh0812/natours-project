@@ -65,6 +65,13 @@ app.use(
       objectSrc: ["'none'"],
       styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
       upgradeInsecureRequests: [],
+      connectSrc: [
+        "'self'",
+        'ws://127.0.0.1:8080/',
+        'http://127.0.0.1:3000',
+        'https://*.mapbox.com',
+        'https://*.stripe.com',
+      ],
     },
   })
 );
