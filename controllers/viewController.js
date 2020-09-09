@@ -3,6 +3,7 @@ const { catchHandler } = require('../utils/catchFunction');
 const Tour = require('../models/tourModel');
 const viewFunctions = require('../utils/viewFunctions');
 const AppError = require('../utils/appError');
+const User = require('../models/userModel');
 
 // ROUTE HANDLER
 exports.getOverview = catchHandler(async (request, response, next) => {
@@ -48,5 +49,24 @@ exports.getLoginForm = catchHandler(async (request, response, next) => {
   // 1) render webpage
   response.status(200).render('login', {
     title: 'Log into your Account',
+  });
+});
+
+exports.getAccount = catchHandler(async (request, response, next) => {
+  if (!response.locals.user)
+    return next(
+      new AppError('It seems you are not logged in. Please sign in again!')
+    );
+  response.status(200).render('account', {
+    title: 'Your Account',
+  });
+});
+
+exports.updateUserData = catchHandler(async (request, response, next) => {
+  const user = await User.findById(request.user._id);
+
+  response.status(200).render('account', {
+    title: 'Account',
+    user: user,
   });
 });

@@ -345,6 +345,7 @@ exports.protect = catchHandler(async (request, response, next) => {
 
   // 5) grant access to protected route
   request.user = currentUser;
+  response.locals.user = currentUser;
   next();
 });
 

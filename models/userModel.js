@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
       validate: {
         validator: (value) => {
           if (value.startsWith('-') || value.endsWith('-')) return false;
-          return value.includes(/@/g);
+          return !value.includes('@');
         },
         message:
           'Username may only contain alphanumeric characters and cannot begin or end with a hyphen.',
