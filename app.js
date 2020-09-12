@@ -20,6 +20,7 @@ const reviewRouter = require('./routes/reviewRoutes');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const Visitor = require('./models/visitorModel');
 const User = require('./models/userModel');
 
 // EXPRESS
@@ -56,10 +57,10 @@ app.use(
       fontSrc: ["'self'", 'https:', 'data:'],
       scriptSrc: [
         "'self'",
+        "'unsafe-eval'",
         'https://cdnjs.cloudflare.com',
         'https://api.mapbox.com',
         'https://js.stripe.com',
-        'blob:',
       ],
       scriptSrcAttr: "'none'",
       imgSrc: ["'self'", 'data:'],
@@ -69,7 +70,7 @@ app.use(
       upgradeInsecureRequests: [],
       connectSrc: [
         "'self'",
-        'ws://127.0.0.1:8080/',
+        'ws://127.0.0.1:8080',
         'http://127.0.0.1:3000',
         'https://*.mapbox.com',
         'https://*.stripe.com',
@@ -125,8 +126,22 @@ app.use((request, response, next) => {
   state.alreadyError = false;
   // set time as a property of request
   request.requestTime = new Date().toISOString();
-
   // response.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3000');
+  next();
+});
+
+// get the visitor by IP address
+app.use(async (request, response, next) => {
+  let visitor = await Visitor.findOne({ ipAddress: request.ip });
+
+  if (!visitor) {
+    visitor = await Visitor.create({
+      ipAddress: request.ip,
+      timesVisited: 0,
+    });
+  }
+
+  request.visitor = visitor;
   next();
 });
 

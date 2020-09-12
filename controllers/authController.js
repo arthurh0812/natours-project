@@ -2,7 +2,6 @@
 const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
-const FailedLoginAttempt = require('../models/failedLoginAttemptModel');
 const User = require('../models/userModel');
 const sendEmail = require('../utils/email');
 const AppError = require('../utils/appError');
@@ -41,35 +40,24 @@ const createAndSendAuthToken = (statusCode, user, response) => {
   });
 };
 
-exports.signUp = catchHandler(async (request, response, next) => {
-  // 1) get data from request body
-  const { name, username, email, password, passwordConfirm } = request.body;
-
-  // 2) create user by that data
-  const newUser = await User.create({
-    name: name,
-    username: username,
-    email: email,
-    password: password,
-    passwordConfirm: passwordConfirm,
-    registered: false,
-  });
-
-  // 3) generate random confirmation token
-  const confirmationToken = newUser.createEmailConfirmationToken();
-  await newUser.save({ validateBeforeSave: false });
-
+const sendEmailConfirmationEmail = async (
+  request,
+  response,
+  next,
+  user,
+  token
+) => {
   // 4) define the confirmation URL by the confirmation token and the message
   const confirmationURL = `${request.protocol}://${request.get(
     'host'
-  )}/api/v1/users/confirmEmail/${confirmationToken}`;
+  )}/confirmMyEmail/${token}`;
 
   const message = `To confirm that you have access to the email address you specified at NATOURS, please click on this link: ${confirmationURL}.\nIf you haven't registered at NATOURS, please just ignore this email!`;
 
   // 5) send email with that message
   try {
     await sendEmail({
-      email: newUser.email,
+      email: user.email,
       subject:
         'Email Confirmation of Your Account at NATOURS (expires in 30 minutes)',
       message: message,
@@ -81,17 +69,64 @@ exports.signUp = catchHandler(async (request, response, next) => {
         'We sent a link to your email address in order to register your account. Please check your email inbox!',
     });
   } catch (error) {
-    newUser.emailConfirmationToken = undefined;
-    newUser.emailConfirmationExpires = undefined;
-    await newUser.save({ validateBeforeSave: false });
+    user.emailConfirmationToken = undefined;
+    user.emailConfirmationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
 
     return next(
       new AppError(
-        'An error occurred while sending the email. Please try again later.',
+        'An error occurred while sending the email. Please send again.',
         500
       )
     );
   }
+};
+
+exports.signUp = catchHandler(async (request, response, next) => {
+  // 1) get data from request body
+  const { name, username, email, password, passwordConfirm } = request.body;
+
+  // 2) create user by that data
+  const newUser = await User.create({
+    name: name,
+    username: username,
+    email: email,
+    password: password,
+    passwordConfirm: passwordConfirm,
+    accounts: [request.visitor._id],
+    registered: false,
+  });
+
+  // 3) generate random confirmation token
+  const confirmationToken = newUser.createEmailConfirmationToken();
+  await newUser.save({ validateBeforeSave: false });
+
+  sendEmailConfirmationEmail(
+    request,
+    response,
+    next,
+    newUser,
+    confirmationToken
+  );
+});
+
+exports.resendEmail = catchHandler(async (request, response, next) => {
+  // find user by visitor
+  const newUser = await User.findOne({
+    registered: false,
+    accounts: request.visitor._id,
+  });
+
+  const confirmationToken = newUser.createEmailConfirmationToken();
+  await newUser.save({ validateBeforeSave: false });
+
+  sendEmailConfirmationEmail(
+    request,
+    response,
+    next,
+    newUser,
+    confirmationToken
+  );
 });
 
 exports.confirmEmail = catchHandler(async (request, response, next) => {
@@ -123,22 +158,18 @@ exports.confirmEmail = catchHandler(async (request, response, next) => {
 
 exports.logIn = catchHandler(async (request, response, next) => {
   // login prohibition function
-  const prohibitLogin = (failedAttempt) =>
+  const prohibitLogin = (visitor) =>
     next(
       new AppError(
         `You had too many incorrect signin attempts. Please wait until ${new Date(
-          failedAttempt.loginProhibitionTime
+          visitor.loginProhibitionTime
         ).toLocaleString({ month: 'short', year: 'numeric' })} to login again.`,
         401
       )
     );
 
-  let fail = await FailedLoginAttempt.findOne({
-    client: request.ipInfo.ip,
-  });
-
-  if (fail && fail.isProhibitedLogin()) {
-    return prohibitLogin(fail);
+  if (request.visitor && request.visitor.isProhibitedLogin()) {
+    return prohibitLogin(request.visitor);
   }
 
   const { username, email, password } = request.body;
@@ -163,47 +194,41 @@ exports.logIn = catchHandler(async (request, response, next) => {
 
   // 4) check if given password is correct
   if (!(await user.correctPassword(password, user.password))) {
-    if (!fail)
-      fail = new FailedLoginAttempt({
-        count: 1,
-        client: request.ipInfo.ip,
-      });
-    else {
-      fail.count += 1;
-    }
+    request.visitor.failedLoginAttempts += 1;
     // set the prohibition time acording to count
-    if (fail.count >= 10) {
+    if (request.visitor.failedLoginAttempts >= 10) {
       // 8 hours
-      fail.loginProhibitionTime = Date.now() + 8 * 60 * 60 * 1000;
-    } else if (fail.count === 9) {
+      request.visitor.loginProhibitionTime = Date.now() + 8 * 60 * 60 * 1000;
+    } else if (request.visitor.failedLoginAttempts === 9) {
       // 4 hours
-      fail.loginProhibitionTime = Date.now() + 4 * 60 * 60 * 1000;
-    } else if (fail.count === 8) {
+      request.visitor.loginProhibitionTime = Date.now() + 4 * 60 * 60 * 1000;
+    } else if (request.visitor.failedLoginAttempts === 8) {
       // 2 hours
-      fail.loginProhibitionTime = Date.now() + 2 * 60 * 60 * 1000;
-    } else if (fail.count === 7) {
+      request.visitor.loginProhibitionTime = Date.now() + 2 * 60 * 60 * 1000;
+    } else if (request.visitor.failedLoginAttempts === 7) {
       // 1 hours
-      fail.loginProhibitionTime = Date.now() + 1 * 60 * 60 * 1000;
-    } else if (fail.count === 6) {
+      request.visitor.loginProhibitionTime = Date.now() + 1 * 60 * 60 * 1000;
+    } else if (request.visitor.failedLoginAttempts === 6) {
       // 1/2 hours
-      fail.loginProhibitionTime = Date.now() + (1 / 2) * 60 * 60 * 1000;
+      request.visitor.loginProhibitionTime =
+        Date.now() + (1 / 2) * 60 * 60 * 1000;
     }
 
     // save changes
-    await fail.save();
+    await request.visitor.save();
 
     // prohibit user from logging in directly at 6th fail
-    if (fail.count >= 6) {
-      return prohibitLogin(fail);
+    if (request.visitor.failedLoginAttempts >= 6) {
+      return prohibitLogin(request.visitor);
     }
 
     return next(new AppError('Incorrect username or email or password', 401));
   }
 
   // 7) if password was correct, reset failure count and remove prohibition time
-  fail.count = 0;
-  fail.loginProhibitionTime = undefined;
-  await fail.save();
+  request.visitor.failedLoginAttempts = 0;
+  request.visitor.loginProhibitionTime = undefined;
+  await request.visitor.save();
 
   // 8) if everything is ok, send token to client
   createAndSendAuthToken(200, user, response);
@@ -390,15 +415,13 @@ exports.isLoggedIn = async (request, response, next) => {
 // (only for rendered pages, no errors!)
 exports.tooManyFailedAttempts = catchHandler(
   async (request, response, next) => {
-    const fail = await FailedLoginAttempt.findOne({
-      client: request.ipInfo.ip,
-    });
+    const { visitor } = request;
 
-    if (fail && fail.isProhibitedLogin()) {
+    if (visitor && visitor.isProhibitedLogin()) {
       return next(
         new AppError(
           `You had too many incorrect signin attempts. Please wait until ${new Date(
-            fail.loginProhibitionTime
+            visitor.loginProhibitionTime
           ).toLocaleString({
             month: 'short',
             year: 'numeric',

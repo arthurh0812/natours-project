@@ -33,6 +33,7 @@ const handleJWTExpiredError = () =>
 
 // A) render JSON for /api/...
 const sendBackendErrorDev = (error, request, response) => {
+  console.log(error);
   return response.status(error.statusCode).json({
     status: error.status,
     error: error,

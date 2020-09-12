@@ -4,7 +4,7 @@ block content
   main.main
     .login-form
       h2.heading-secondary.ma-bt-lg Sign up for free!
-      form.form
+      form.form.form--signup
         .form__group
           label.form__label(for='name') Name
           input#name.form__input(type='name', placeholder='Enter your firstname and/or sirname', required)
@@ -16,7 +16,7 @@ block content
           label.form__label(for='password') Password
           input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
         .form__group.ma-bt-md
-          label.form__label(for='password') Plase Confirm your Password
-          input#passwordConfirm.form__input(type='password', placeholder='••••••••', required, minlength='8')
+          label.form__label(for='password') Please Confirm your Password
+          input#password-confirm.form__input(type='password', placeholder='••••••••', required, minlength='8')
         .form__group
-          button.btn.btn--green Sign up
+          button.btn.btn--green.btn--signup Sign up

@@ -45,6 +45,13 @@ exports.getSignupForm = catchHandler(async (request, response, next) => {
   });
 });
 
+exports.confirmMyEmail = catchHandler(async (request, response, next) => {
+  response.status(200).render('confirmEmail', {
+    title: 'Confirm my Email',
+    token: request.params.token,
+  });
+});
+
 exports.getLoginForm = catchHandler(async (request, response, next) => {
   // 1) render webpage
   response.status(200).render('login', {

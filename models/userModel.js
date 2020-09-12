@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema(
     },
     photo: {
       type: String,
+      default: 'default.jpg',
     },
     role: {
       type: String,
@@ -78,6 +79,9 @@ const userSchema = new mongoose.Schema(
     },
     passwordResetExpires: {
       type: Date,
+    },
+    accounts: {
+      type: [mongoose.SchemaTypes.ObjectId],
     },
     active: {
       type: Boolean,

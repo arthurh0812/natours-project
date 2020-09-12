@@ -45,7 +45,6 @@ export const logout = async function () {
 
     window.location.reload();
   } catch (error) {
-    console.log(error);
     showAlert(
       'error',
       'Error signing out. Please check your internet connection!'

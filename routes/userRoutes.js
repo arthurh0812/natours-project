@@ -9,6 +9,7 @@ const router = express.Router();
 // 2.) DEFINE AND NAVIGATE TO ROUTES
 // AUTHORIZATION
 router.post('/signup', authController.signUp);
+router.get('/resendEmail', authController.resendEmail);
 router.get('/confirmEmail/:token', authController.confirmEmail);
 router.post('/login', authController.logIn);
 router.get('/logout', authController.logout);
@@ -22,7 +23,11 @@ router.patch('/changeMyPassword', authController.changePassword);
 
 // ME-ROUTES
 router.get('/me', userController.getMe, userController.getSpecificUser);
-router.patch('/updateMe', userController.updateMe);
+router.patch(
+  '/updateMe',
+  userController.uploadUserPhoto,
+  userController.updateMe
+);
 router.delete('/deleteMe', userController.deleteMe);
 
 // DATA ROUTES

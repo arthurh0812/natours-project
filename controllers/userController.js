@@ -1,11 +1,38 @@
 /* eslint-disable array-callback-return */
 // MODULES
+const multer = require('multer');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
 
 // FUNCTIONS
+const multerStorage = multer.diskStorage({
+  destination: (request, file, cbfn) => {
+    cbfn(null, 'public/img/users');
+  },
+  filename: (request, file, cbfn) => {
+    const ext = file.mimetype.split('/')[1];
+    cbfn(null, `user-${request.user._id}-${Date.now()}.${ext}`);
+  },
+});
+
+const multerFilter = (request, file, cbfn) => {
+  if (file.mimetype.startsWith('image')) {
+    cbfn(null, true);
+  } else {
+    cbfn(
+      new AppError('Photo is not an image. Please only upload images.', 400),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
 const filterObj = (obj, ...fields) => {
   const newObject = {};
   Object.keys(obj).forEach((el) => {
@@ -13,6 +40,9 @@ const filterObj = (obj, ...fields) => {
   });
   return newObject;
 };
+
+// MIDDLEWARE
+exports.uploadUserPhoto = upload.single('photo');
 
 // ROUTE HANDLERS
 exports.createUser = (request, response, next) => {
@@ -38,6 +68,7 @@ exports.updateMe = catchHandler(async (request, response, next) => {
 
   // 2) filter out unwanted fields that are not allowed to be updated by the user
   const filteredBody = filterObj(request.body, 'name', 'email');
+  if (request.file) filteredBody.photo = request.file.filename;
 
   // 3) update user document
   const updatedUser = await User.findByIdAndUpdate(

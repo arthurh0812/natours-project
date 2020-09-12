@@ -1,12 +1,16 @@
 /* eslint-disable */
 
 import '@babel/polyfill';
+import { signup, resendEmail } from './signup';
+import { confirmEmail } from './confirmEmail';
 import { login, logout } from './login';
 import { updateSettings } from './updateUser';
 import { displayMap } from './mapbox';
 
 // DOM Elements
 const mapBox = document.getElementById('map');
+const signupForm = document.querySelector('.form--signup');
+const emailConfirmationBox = document.querySelector('.emailConfirmationBox');
 const loginForm = document.querySelector('.form--login');
 const logoutBtn = document.querySelector('.nav__el--logout');
 const userDataForm = document.querySelector('.form-user-data');
@@ -30,6 +34,41 @@ if (loginForm) {
 
     login(emailOrUsername, password);
   });
+}
+
+if (signupForm) {
+  signupForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    document.querySelector('.btn--signup').textContent = 'Signing up...';
+
+    const name = document.getElementById('name').value;
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('password-confirm').value;
+
+    await signup({
+      name: name,
+      username: username,
+      email: email,
+      password: password,
+      passwordConfirm: passwordConfirm,
+    }).catch(function (error) {
+      console.log('error', error);
+    });
+
+    const emailResendButton = document.querySelector('.email-resend');
+
+    emailResendButton.addEventListener('click', function (event) {
+      if (event.which === 1) {
+        resendEmail();
+      }
+    });
+  });
+}
+
+if (emailConfirmationBox) {
+  confirmEmail(emailConfirmationBox.dataset.token);
 }
 
 if (logoutBtn) {
