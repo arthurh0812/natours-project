@@ -8552,6 +8552,8 @@ exports.confirmEmail = void 0;
 
 var _axios = _interopRequireDefault(require("axios"));
 
+var _alerts = require("./alerts");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
@@ -8585,7 +8587,7 @@ var confirmEmail = /*#__PURE__*/function () {
           case 7:
             _context.prev = 7;
             _context.t0 = _context["catch"](0);
-            console.log('error');
+            (0, _alerts.showAlert)('error', 'Invalid token');
 
           case 10:
           case "end":
@@ -8601,7 +8603,7 @@ var confirmEmail = /*#__PURE__*/function () {
 }();
 
 exports.confirmEmail = confirmEmail;
-},{"axios":"../../node_modules/axios/index.js"}],"login.js":[function(require,module,exports) {
+},{"axios":"../../node_modules/axios/index.js","./alerts":"alerts.js"}],"login.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

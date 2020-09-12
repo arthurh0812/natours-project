@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { showAlert } from './alerts';
 
 export const confirmEmail = async function (token) {
   try {
@@ -11,6 +12,6 @@ export const confirmEmail = async function (token) {
       window.location.assign('/');
     }
   } catch (error) {
-    console.log('error');
+    showAlert('error', 'Invalid token');
   }
 };

@@ -1,21 +1,24 @@
 /* eslint-disable array-callback-return */
 // MODULES
+const fs = require('fs');
 const multer = require('multer');
+const sharp = require('sharp');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
 
 // FUNCTIONS
-const multerStorage = multer.diskStorage({
-  destination: (request, file, cbfn) => {
-    cbfn(null, 'public/img/users');
-  },
-  filename: (request, file, cbfn) => {
-    const ext = file.mimetype.split('/')[1];
-    cbfn(null, `user-${request.user._id}-${Date.now()}.${ext}`);
-  },
-});
+// const multerStorage = multer.diskStorage({
+//   destination: (request, file, cbfn) => {
+//     cbfn(null, 'public/img/users');
+//   },
+//   filename: (request, file, cbfn) => {
+//     x
+//     cbfn(null, `user-${request.user._id}-${Date.now()}.${ext}`);
+//   },
+// });
+const multerStorage = multer.memoryStorage();
 
 const multerFilter = (request, file, cbfn) => {
   if (file.mimetype.startsWith('image')) {
@@ -43,6 +46,25 @@ const filterObj = (obj, ...fields) => {
 
 // MIDDLEWARE
 exports.uploadUserPhoto = upload.single('photo');
+
+exports.resizeUserPhoto = async (request, response, next) => {
+  if (!request.file) return next();
+
+  if (!request.user.photo.startsWith('default'))
+    fs.unlink(`public/img/users/${request.user.photo}`, (error) => {
+      if (error) console.log('Error:', error);
+    });
+
+  request.file.filename = `user-${request.user._id}-${Date.now()}.jpeg`;
+
+  sharp(request.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/users/${request.file.filename}`);
+
+  next();
+};
 
 // ROUTE HANDLERS
 exports.createUser = (request, response, next) => {
