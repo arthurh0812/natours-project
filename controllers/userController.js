@@ -47,7 +47,7 @@ const filterObj = (obj, ...fields) => {
 // MIDDLEWARE
 exports.uploadUserPhoto = upload.single('photo');
 
-exports.resizeUserPhoto = async (request, response, next) => {
+exports.resizeUserPhoto = catchHandler(async (request, response, next) => {
   if (!request.file) return next();
 
   if (!request.user.photo.startsWith('default'))
@@ -57,14 +57,14 @@ exports.resizeUserPhoto = async (request, response, next) => {
 
   request.file.filename = `user-${request.user._id}-${Date.now()}.jpeg`;
 
-  sharp(request.file.buffer)
+  await sharp(request.file.buffer)
     .resize(500, 500)
     .toFormat('jpeg')
     .jpeg({ quality: 90 })
     .toFile(`public/img/users/${request.file.filename}`);
 
   next();
-};
+});
 
 // ROUTE HANDLERS
 exports.createUser = (request, response, next) => {

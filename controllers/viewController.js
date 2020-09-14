@@ -62,7 +62,7 @@ exports.getLoginForm = catchHandler(async (request, response, next) => {
 exports.getAccount = catchHandler(async (request, response, next) => {
   if (!response.locals.user)
     return next(
-      new AppError('It seems you are not logged in. Please sign in again!')
+      new AppError('It seems you are not logged in. Please sign in again!', 401)
     );
   response.status(200).render('account', {
     title: 'Your Account',

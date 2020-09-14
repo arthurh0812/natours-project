@@ -9118,6 +9118,7 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 // DOM Elements
+var cardContainer = document.querySelector('.card-container');
 var mapBox = document.getElementById('map');
 var signupForm = document.querySelector('.form--signup');
 var emailConfirmationBox = document.querySelector('.emailConfirmationBox');
@@ -9125,6 +9126,16 @@ var loginForm = document.querySelector('.form--login');
 var logoutBtn = document.querySelector('.nav__el--logout');
 var userDataForm = document.querySelector('.form-user-data');
 var userPasswordForm = document.querySelector('.form-user-password'); // Delegation
+
+if (cardContainer) {
+  cardContainer.addEventListener('mouseup', function (event) {
+    if (event.target.matches(".card__header, .card__header *") && event.which === 1) {
+      var card = event.target.closest('.card');
+      var cardSlug = card.dataset.slug;
+      window.location.href = "/tour/".concat(cardSlug);
+    }
+  });
+}
 
 if (mapBox) {
   var locations = JSON.parse(mapBox.dataset.locations);
@@ -9205,14 +9216,12 @@ if (userDataForm) {
   userDataForm.addEventListener('submit', function (event) {
     event.preventDefault();
     document.querySelector('.btn--save-settings').textContent = 'Updating...';
-    var name = document.getElementById('name').value;
-    var username = document.getElementById('username').value;
-    var email = document.getElementById('email').value;
-    (0, _updateUser.updateSettings)({
-      name: name,
-      username: username,
-      email: email
-    }, 'data').then(function () {
+    var form = new FormData();
+    form.append('name', document.getElementById('name').value);
+    form.append('username', document.getElementById('username').value);
+    form.append('email', document.getElementById('email').value);
+    form.append('photo', document.getElementById('photo').files[0]);
+    (0, _updateUser.updateSettings)(form, 'data').then(function () {
       document.querySelector('.btn--save-settings').textContent = 'Save Settings';
     });
   });

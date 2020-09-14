@@ -61,7 +61,6 @@ const sendBackendErrorProd = (error, request, response) => {
 
 // B) render ERROR PAGE
 const sendFrontendErrorDev = (error, request, response) => {
-  console.log('ERROR', error);
   return response.status(error.statusCode).render('error', {
     title: 'Something went wrong...',
     msg: error.message,

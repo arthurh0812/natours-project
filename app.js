@@ -57,6 +57,7 @@ app.use(
       fontSrc: ["'self'", 'https:', 'data:'],
       scriptSrc: [
         "'self'",
+        'blob:',
         "'unsafe-eval'",
         'https://cdnjs.cloudflare.com',
         'https://api.mapbox.com',

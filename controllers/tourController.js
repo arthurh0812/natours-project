@@ -1,6 +1,8 @@
 /* eslint-disable prefer-const */
 /* eslint-disable array-callback-return */
 // MODULES
+const multer = require('multer');
+const sharp = require('sharp');
 const Tour = require('../models/tourModel');
 const { catchHandler, catchParam } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
@@ -50,7 +52,67 @@ const units = {
   nmi: 1852,
 };
 
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (request, file, cbfn) => {
+  if (file.mimetype.startsWith('image')) {
+    cbfn(null, true);
+  } else {
+    cbfn(
+      new AppError('Photo is not an image. Please only upload images.', 400),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
 // MIDDLEWARE FUNCTIONS
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 10 },
+]);
+
+// upload.single('...') => request.file
+// upload.fields('...') => request.files
+// upload.array('...') => request.files
+
+exports.resizeTourImages = catchHandler(async (request, response, next) => {
+  if (!request.files.imageCover || !request.files.images) next();
+
+  // 1) Cover image
+  request.body.imageCover = `tour-${
+    request.params.id
+  }-${Date.now()}-cover.jpeg`;
+  await sharp(request.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 95 })
+    .toFile(`public/img/tours/${request.body.imageCover}`);
+
+  // 2) Tour images
+  request.body.images = new Array([]);
+
+  await Promise.all(
+    request.files.images.map(async (file, index) => {
+      request.body.images[index] = `tour-${request.params.id}-${Date.now()}-${
+        index + 1
+      }.jpeg`;
+
+      await sharp(file.buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 })
+        .toFile(`public/img/tours/${request.body.images[index]}`);
+    })
+  );
+
+  next();
+});
+
 exports.aliasTopTours = catchParam(async (request, response, next, type) => {
   // ROUTE PATH MUTATIONS
   type = type.replace(/(most-rated|most-Rated)/g, 'mostrated');
