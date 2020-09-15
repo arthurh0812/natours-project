@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const sendEmail = require('../utils/email');
+const Email = require('../utils/email');
 const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 
@@ -56,18 +56,12 @@ const sendEmailConfirmationEmail = async (
 
   // 5) send email with that message
   try {
-    await sendEmail({
-      email: user.email,
-      subject:
-        'Email Confirmation of Your Account at NATOURS (expires in 30 minutes)',
-      message: message,
-    });
-
-    response.status(200).json({
-      status: 'success',
-      message:
-        'We sent a link to your email address in order to register your account. Please check your email inbox!',
-    });
+    // await sendEmail({
+    //   email: user.email,
+    //   subject:
+    //     'Email Confirmation of Your Account at NATOURS (expires in 30 minutes)',
+    //   message: message,
+    // });
   } catch (error) {
     user.emailConfirmationToken = undefined;
     user.emailConfirmationExpires = undefined;
@@ -101,13 +95,22 @@ exports.signUp = catchHandler(async (request, response, next) => {
   const confirmationToken = newUser.createEmailConfirmationToken();
   await newUser.save({ validateBeforeSave: false });
 
-  sendEmailConfirmationEmail(
-    request,
-    response,
-    next,
-    newUser,
-    confirmationToken
-  );
+  // 4) define the confirmation URL by the confirmation token and the message
+  const confirmationUrl = `${request.protocol}://${request.get(
+    'host'
+  )}/confirmMyEmail/${confirmationToken}`;
+
+  // 5) use Email constructor to create and send corresponding email
+  await new Email(newUser, {
+    confirmationUrl: confirmationUrl,
+  }).sendWelcome();
+
+  // 6) send response to client
+  response.status(200).json({
+    status: 'success',
+    message:
+      'We sent you an email in order to verify your email. Please check your email inbox!',
+  });
 });
 
 exports.resendEmail = catchHandler(async (request, response, next) => {
@@ -117,16 +120,31 @@ exports.resendEmail = catchHandler(async (request, response, next) => {
     accounts: request.visitor._id,
   });
 
+  if (!newUser)
+    return next(
+      new AppError('It seems you have not created any new account', 404)
+    );
+
+  // 2) create new confirmation token
   const confirmationToken = newUser.createEmailConfirmationToken();
   await newUser.save({ validateBeforeSave: false });
 
-  sendEmailConfirmationEmail(
-    request,
-    response,
-    next,
-    newUser,
-    confirmationToken
-  );
+  // 3) define email verfication url
+  const confirmationUrl = `${request.protocol}://${request.get(
+    'host'
+  )}/confirmMyEmail/${confirmationToken}`;
+
+  // 4) use Email constructor to create and send corresponding email
+  await new Email(newUser, {
+    confirmationUrl: confirmationUrl,
+  }).sendResendEmail();
+
+  // 5) send response to client
+  response.status(200).json({
+    status: 'success',
+    message:
+      'We resent an email in order to verify your email. Please check your email inbox!',
+  });
 });
 
 exports.confirmEmail = catchHandler(async (request, response, next) => {
@@ -268,11 +286,11 @@ exports.forgotPassword = catchHandler(async (request, response, next) => {
   const message = `Forgot your password? Submit a PATCH request with your new password and confirm the new password to: ${resetURL}.\nIf you haven't requested to reset your password, please just ignore this email!`;
 
   try {
-    await sendEmail({
-      email: user.email,
-      subject: 'Your Password Reset at NATOURS (expires in 10 minutes)',
-      message: message,
-    });
+    // await sendEmail({
+    //   email: user.email,
+    //   subject: 'Your Password Reset at NATOURS (expires in 10 minutes)',
+    //   message: message,
+    // });
 
     response.status(200).json({
       status: 'success',

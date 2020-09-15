@@ -1,0 +1,18 @@
+extends base
+
+block content
+  p Hi #{firstName},
+    p You requested to send you a new verification email.
+    p To confirm that you have access to the email address you specified at NATOURS, please click on this link:
+    table.btn.btn-primary(role='presentation', border='0', cellpadding='0', cellspacing='0')
+      tbody
+        tr
+          td(align='left')
+            table(role='presentation', border='0', cellpadding='0', cellspacing='0')
+              tbody
+                tr
+                  td
+                    a(href=`${confirmationUrl}`, target='_blank') Confirm my Email
+    p If you haven't registered at NATOURS or don't want to, then please just ignore this mail.
+    p If you need any help with booking your next tour, please don't hesitate to contact me!
+    p - Monty Banker, CEO
