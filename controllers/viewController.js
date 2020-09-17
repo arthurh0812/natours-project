@@ -53,7 +53,6 @@ exports.confirmMyEmail = catchHandler(async (request, response, next) => {
 });
 
 exports.getLoginForm = catchHandler(async (request, response, next) => {
-  // 1) render webpage
   response.status(200).render('login', {
     title: 'Log into your Account',
   });
@@ -64,6 +63,7 @@ exports.getAccount = catchHandler(async (request, response, next) => {
     return next(
       new AppError('It seems you are not logged in. Please sign in again!', 401)
     );
+
   response.status(200).render('account', {
     title: 'Your Account',
   });
@@ -75,5 +75,11 @@ exports.updateUserData = catchHandler(async (request, response, next) => {
   response.status(200).render('account', {
     title: 'Account',
     user: user,
+  });
+});
+
+exports.getResetPasswordForm = catchHandler(async (request, response, next) => {
+  response.status(200).render('resetPassword', {
+    title: 'Reset your Password',
   });
 });

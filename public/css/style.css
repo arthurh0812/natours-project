@@ -304,6 +304,12 @@ body {
   outline-offset: 3px;
 }
 
+.link {
+  display: block;
+  color: blue;
+  text-decoration: underline;
+}
+
 .header {
   background-color: #444;
   padding: 0 5rem;

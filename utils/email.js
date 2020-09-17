@@ -35,6 +35,7 @@ class Email {
         firstName: this.firstName,
         welcomeUrl: this.urls.welcomeUrl,
         confirmationUrl: this.urls.confirmationUrl,
+        resetPasswordUrl: this.urls.resetPasswordUrl,
         subject: subject,
       }
     );
@@ -53,15 +54,21 @@ class Email {
   }
 
   async sendWelcome() {
-    await this.send('welcome', 'Welcome to the NATOURS family!!');
+    await this.send('welcome', 'Welcome to the NATOURS Family!!');
   }
 
   async sendResendEmail() {
-    await this.send('resendEmail', 'Resend the Email Confirmation');
+    await this.send(
+      'resendEmail',
+      'Resend the Email Confirmation (expires in 30 minutes)'
+    );
   }
 
   async sendResetPassword() {
-    await this.send();
+    await this.send(
+      'resetPassword',
+      'Reset your Password (expires in 10 minutes)'
+    );
   }
 }
 

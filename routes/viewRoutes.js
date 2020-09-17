@@ -23,6 +23,8 @@ router.get('/signup', authController.isLoggedIn, viewController.getSignupForm);
 
 router.get('/confirmMyEmail/:token', viewController.confirmMyEmail);
 
+router.get('/resetMyPassword/:token', viewController.getResetPasswordForm);
+
 router.get(
   '/login',
   authController.isLoggedIn,

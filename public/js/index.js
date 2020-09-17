@@ -4,6 +4,7 @@ import '@babel/polyfill';
 import { signup, resendEmail } from './signup';
 import { confirmEmail } from './confirmEmail';
 import { login, logout } from './login';
+import { forgotPassword, resetPassword } from './forgotPassword';
 import { updateSettings } from './updateUser';
 import { displayMap } from './mapbox';
 
@@ -11,6 +12,7 @@ import { displayMap } from './mapbox';
 const cardContainer = document.querySelector('.card-container');
 const mapBox = document.getElementById('map');
 const signupForm = document.querySelector('.form--signup');
+const resetPasswordForm = document.querySelector('.form--reset-password');
 const emailConfirmationBox = document.querySelector('.emailConfirmationBox');
 const loginForm = document.querySelector('.form--login');
 const logoutBtn = document.querySelector('.nav__el--logout');
@@ -48,6 +50,38 @@ if (loginForm) {
     const password = document.getElementById('password').value;
 
     login(emailOrUsername, password);
+  });
+
+  document
+    .querySelector('.link--forgot-password')
+    .addEventListener('click', function (event) {
+      event.preventDefault();
+
+      const email = prompt('Please type in your email');
+
+      forgotPassword(email);
+    });
+}
+
+if (resetPasswordForm) {
+  resetPasswordForm.addEventListener('submit', function (event) {
+    document.querySelector('.btn--reset-password').textContent =
+      'Changing Password...';
+    event.preventDefault();
+
+    const newPassword = document.getElementById('password').value;
+
+    const newPasswordConfirm = document.getElementById('passwordConfirm').value;
+
+    let token = window.location.toString().split('/').slice(-1);
+
+    resetPassword(
+      {
+        password: newPassword,
+        passwordConfirm: newPasswordConfirm,
+      },
+      token
+    );
   });
 }
 

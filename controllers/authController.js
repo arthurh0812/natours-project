@@ -40,42 +40,6 @@ const createAndSendAuthToken = (statusCode, user, response) => {
   });
 };
 
-const sendEmailConfirmationEmail = async (
-  request,
-  response,
-  next,
-  user,
-  token
-) => {
-  // 4) define the confirmation URL by the confirmation token and the message
-  const confirmationURL = `${request.protocol}://${request.get(
-    'host'
-  )}/confirmMyEmail/${token}`;
-
-  const message = `To confirm that you have access to the email address you specified at NATOURS, please click on this link: ${confirmationURL}.\nIf you haven't registered at NATOURS, please just ignore this email!`;
-
-  // 5) send email with that message
-  try {
-    // await sendEmail({
-    //   email: user.email,
-    //   subject:
-    //     'Email Confirmation of Your Account at NATOURS (expires in 30 minutes)',
-    //   message: message,
-    // });
-  } catch (error) {
-    user.emailConfirmationToken = undefined;
-    user.emailConfirmationExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    return next(
-      new AppError(
-        'An error occurred while sending the email. Please send again.',
-        500
-      )
-    );
-  }
-};
-
 exports.signUp = catchHandler(async (request, response, next) => {
   // 1) get data from request body
   const { name, username, email, password, passwordConfirm } = request.body;
@@ -278,36 +242,21 @@ exports.forgotPassword = catchHandler(async (request, response, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  // 4) send it to user's email
-  const resetURL = `${request.protocol}://${request.get(
+  // 4) create reset url containing the reset token
+  const resetUrl = `${request.protocol}://${request.get(
     'host'
-  )}/api/v1/users/resetPassword/${resetToken}`;
+  )}/resetMyPassword/${resetToken}`;
 
-  const message = `Forgot your password? Submit a PATCH request with your new password and confirm the new password to: ${resetURL}.\nIf you haven't requested to reset your password, please just ignore this email!`;
+  // 5) send it to user's email
+  await new Email(user, {
+    resetPasswordUrl: resetUrl,
+  }).sendResetPassword();
 
-  try {
-    // await sendEmail({
-    //   email: user.email,
-    //   subject: 'Your Password Reset at NATOURS (expires in 10 minutes)',
-    //   message: message,
-    // });
-
-    response.status(200).json({
-      status: 'success',
-      message: 'Token was sent to your email',
-    });
-  } catch (error) {
-    user.passwordResetToken = undefined;
-    user.passworResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    return next(
-      new AppError(
-        'An error occurred while sending the email. Please try again later.',
-        500
-      )
-    );
-  }
+  // 6) send response to client
+  response.status(200).json({
+    status: 'success',
+    message: 'Token was sent to your email',
+  });
 });
 
 exports.resetPassword = catchHandler(async (request, response, next) => {
