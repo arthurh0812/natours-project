@@ -4,6 +4,7 @@ const fs = require('fs');
 const multer = require('multer');
 const sharp = require('sharp');
 const User = require('../models/userModel');
+const Email = require('../utils/email');
 const AppError = require('../utils/appError');
 const { catchHandler } = require('../utils/catchFunction');
 const factory = require('./handlerFactory');
@@ -35,14 +36,6 @@ const upload = multer({
   storage: multerStorage,
   fileFilter: multerFilter,
 });
-
-const filterObj = (obj, ...fields) => {
-  const newObject = {};
-  Object.keys(obj).forEach((el) => {
-    if (fields.includes(el)) newObject[el] = obj[el];
-  });
-  return newObject;
-};
 
 // MIDDLEWARE
 exports.uploadUserPhoto = upload.single('photo');
@@ -88,45 +81,76 @@ exports.updateMe = catchHandler(async (request, response, next) => {
       )
     );
 
-  // 2) filter out unwanted fields that are not allowed to be updated by the user
-  const filteredBody = filterObj(request.body, 'name', 'email');
-  if (request.file) filteredBody.photo = request.file.filename;
+  // 2) photo
+  if (request.file) {
+    // 1) set the user's photo property to the filename
+    request.user.photo = request.file.filename;
+  }
 
-  // 3) update user document
-  const updatedUser = await User.findByIdAndUpdate(
-    request.user._id,
-    filteredBody,
-    { new: true, runValidators: true }
-  );
+  // 3) email
+  if (request.body.email && request.body.email !== request.user.email) {
+    // 1) set user's newEmail property
+    request.user.newEmail = request.body.email;
 
-  // 4) update username if given and allowed
-  if (request.body.username && updatedUser.username !== request.body.username) {
-    if (updatedUser.checkUsernameChangeProhibition())
+    // 2) validate given email
+    await request.user.save({ validateModifiedOnly: true });
+
+    // 3) create email confirmationtoken and expiration on user
+    const token = request.user.createEmailConfirmationToken();
+
+    // 4) send email with token
+    const confirmationUrl = `${request.protocol}://${request.get(
+      'host'
+    )}/confirmMyEmail/${token}`;
+
+    await new Email(request.user, {
+      confirmationUrl: confirmationUrl,
+    }).sendResetEmail();
+  }
+
+  // 4) name
+  if (request.body.name && request.body.name !== request.user.name) {
+    // 1) set the user's name property
+    request.user.name = request.body.name;
+  }
+
+  // 5) username
+  if (
+    request.body.username &&
+    request.body.username !== request.user.username
+  ) {
+    // 1) check if user is allowed to change his username again
+    if (request.user.checkUsernameChangeProhibition())
       return next(
         new AppError(
           `Please wait until ${new Date(
-            updatedUser.usernameChangedAt.getTime() + 30 * 24 * 60 * 60 * 1000
+            request.user.usernameChangedAt.getTime() + 30 * 24 * 60 * 60 * 1000
           )} to change your username again.`,
           401
         )
       );
 
-    updatedUser.usernameChangedAt = Date.now();
-    updatedUser.save({ validateBeforeSave: false });
+    // 2) set the user's usernameChangedAt and username properties
+    request.user.usernameChangedAt = Date.now();
+    request.user.username = request.body.username;
   }
 
-  // 5) send response with updated user data
+  // 6) validate modified fields and save document
+  await request.user.save({ validateModifiedOnly: true });
+
+  // 7) send response with updated user data
   response.status(200).json({
     status: 'success',
     data: {
-      user: updatedUser,
+      user: request.user,
     },
   });
 });
 
 exports.deleteMe = catchHandler(async (request, response, next) => {
-  // 1) get the user by id and set the active property to false
-  await User.findByIdAndUpdate(request.user._id, { active: false });
+  // 1) set the active property to false
+  request.user.active = false;
+  await request.user.save({ validateModifiedOnly: true });
 
   response.status(204).json({
     status: 'success',

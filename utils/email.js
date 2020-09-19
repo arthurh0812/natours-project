@@ -70,6 +70,13 @@ class Email {
       'Reset your Password (expires in 10 minutes)'
     );
   }
+
+  async sendResetEmail() {
+    await this.send(
+      'resetEmail',
+      'Confirm your new Email (expires in 30 minutes)'
+    );
+  }
 }
 
 module.exports = Email;

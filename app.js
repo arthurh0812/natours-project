@@ -33,7 +33,10 @@ app.set('views', path.join(__dirname, 'views'));
 
 // remove all unregistered accounts whose confirmation has expired (every 30 min)
 async function removeUnregistered() {
-  await User.deleteMany({ emailConfirmationExpires: { $lte: Date.now() } });
+  await User.deleteMany({
+    registered: false,
+    emailConfirmationExpires: { $lte: Date.now() },
+  });
   setTimeout(removeUnregistered, 30 * 60 * 1000);
 }
 removeUnregistered();

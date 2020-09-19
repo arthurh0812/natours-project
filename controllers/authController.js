@@ -132,6 +132,8 @@ exports.confirmEmail = catchHandler(async (request, response, next) => {
   user.registered = true;
   user.emailConfirmationToken = undefined;
   user.emailConfirmationExpires = undefined;
+
+  if (user.newEmail) user.email = user.newEmail;
   await user.save({ validateBeforeSave: false });
 
   // 5) send JWT to client
@@ -287,21 +289,24 @@ exports.resetPassword = catchHandler(async (request, response, next) => {
 
 exports.changePassword = catchHandler(async (request, response, next) => {
   // 1) get user by token (findByIdAndUpdate() would not work as it doesn't keep object in memory and so the validator will not have access to 'this')
-  const user = await User.findById(request.user._id).select('+password');
+  request.user.select('+password');
 
   // 2) check if POSTed password is correct
   if (
-    !(await user.correctPassword(request.body.currentPassword, user.password))
+    !(await request.user.correctPassword(
+      request.body.currentPassword,
+      request.user.password
+    ))
   )
     return next(new AppError('The password is not correct.', 401));
 
   // 3) update password
-  user.password = request.body.newPassword;
-  user.passwordConfirm = request.body.newPasswordConfirm;
-  await user.save();
+  request.user.password = request.body.newPassword;
+  request.user.passwordConfirm = request.body.newPasswordConfirm;
+  await request.user.save({ validateModifiedOnly: true });
 
   // 4) log user in, send JWT
-  createAndSendAuthToken(200, user, response);
+  createAndSendAuthToken(200, request.user, response);
 });
 
 exports.protect = catchHandler(async (request, response, next) => {
@@ -401,11 +406,12 @@ exports.tooManyFailedAttempts = catchHandler(
   }
 );
 
-exports.controlInput = (...inputFields) => {
+exports.controlInput = (...fields) => {
   return (request, response, next) => {
-    Object.keys(request.body).forEach((key) => {
-      if (!inputFields.includes(key)) delete request.body[key];
+    const newObject = {};
+    Object.keys(request.body).forEach((el) => {
+      if (fields.includes(el)) newObject[el] = request.body[el];
     });
-    next();
+    return newObject;
   };
 };

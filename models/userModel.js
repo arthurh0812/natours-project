@@ -44,6 +44,15 @@ const userSchema = new mongoose.Schema(
     emailConfirmationExpires: {
       type: Date,
     },
+    newEmail: {
+      type: String,
+      lowercase: true,
+      unique: true,
+      validate: {
+        validator: validator.isEmail,
+        message: 'Please provide a valid email',
+      },
+    },
     photo: {
       type: String,
       default: 'default.jpg',
