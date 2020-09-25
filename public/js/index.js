@@ -7,6 +7,7 @@ import { login, logout } from './login';
 import { forgotPassword, resetPassword } from './forgotPassword';
 import { updateSettings } from './updateUser';
 import { displayMap } from './mapbox';
+import { paymentIntent } from './payment';
 
 // DOM Elements
 const cardContainer = document.querySelector('.card-container');
@@ -18,6 +19,7 @@ const loginForm = document.querySelector('.form--login');
 const logoutBtn = document.querySelector('.nav__el--logout');
 const userDataForm = document.querySelector('.form-user-data');
 const userPasswordForm = document.querySelector('.form-user-password');
+const paymentForm = document.querySelector('.payment-form');
 
 // Delegation
 if (cardContainer) {
@@ -174,4 +176,8 @@ if (userPasswordForm) {
       document.getElementById('password-confirm').value = '';
     });
   });
+}
+
+if (paymentForm) {
+  paymentIntent(paymentForm.dataset.tourid);
 }

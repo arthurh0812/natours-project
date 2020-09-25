@@ -101,6 +101,9 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       select: false,
     },
+    stripeId: {
+      type: String,
+    },
   },
   {
     toJSON: { virtuals: true },

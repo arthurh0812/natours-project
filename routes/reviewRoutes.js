@@ -3,7 +3,7 @@ const express = require('express');
 const reviewController = require('../controllers/reviewController');
 const authController = require('../controllers/authController');
 
-// 1.) CREATE ROUTER
+// ROUTER
 const router = express.Router({ mergeParams: true });
 
 // ROUTES

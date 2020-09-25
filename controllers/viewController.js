@@ -38,27 +38,27 @@ exports.getTour = catchHandler(async (request, response, next) => {
   });
 });
 
-exports.getSignupForm = catchHandler(async (request, response, next) => {
+exports.getSignupForm = (request, response) => {
   // 1) render webpage
   response.status(200).render('signup', {
     title: 'Sign up for free',
   });
-});
+};
 
-exports.confirmMyEmail = catchHandler(async (request, response, next) => {
+exports.confirmMyEmail = (request, response) => {
   response.status(200).render('confirmEmail', {
     title: 'Confirm my Email',
     token: request.params.token,
   });
-});
+};
 
-exports.getLoginForm = catchHandler(async (request, response, next) => {
+exports.getLoginForm = (request, response) => {
   response.status(200).render('login', {
     title: 'Log into your Account',
   });
-});
+};
 
-exports.getAccount = catchHandler(async (request, response, next) => {
+exports.getAccount = (request, response, next) => {
   if (!response.locals.user)
     return next(
       new AppError('It seems you are not logged in. Please sign in again!', 401)
@@ -67,19 +67,34 @@ exports.getAccount = catchHandler(async (request, response, next) => {
   response.status(200).render('account', {
     title: 'Your Account',
   });
-});
+};
 
-exports.updateUserData = catchHandler(async (request, response, next) => {
+exports.updateUserData = async (request, response) => {
   const user = await User.findById(request.user._id);
 
   response.status(200).render('account', {
     title: 'Account',
     user: user,
   });
-});
+};
 
-exports.getResetPasswordForm = catchHandler(async (request, response, next) => {
+exports.getResetPasswordForm = (request, response) => {
   response.status(200).render('resetPassword', {
     title: 'Reset your Password',
   });
-});
+};
+
+exports.paymentIntent = async (request, response, next) => {
+  const tour = await Tour.findById(request.params.tourId);
+
+  if (!tour)
+    return next(
+      new AppError("Sorry! We coudn't find a tour with that ID.", 404)
+    );
+
+  response.status(200).render('payment', {
+    title: 'Book this Tour?',
+    tourId: tour._id,
+    price: tour.price,
+  });
+};

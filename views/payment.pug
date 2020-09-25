@@ -1,0 +1,12 @@
+extends base
+
+block content
+  main.main
+    form.payment-form(data-tourid=`${tourId}`)
+      #card-element
+      button.btn--payment-form
+        .spinner.hidden#spinner
+        #button-text Pay $#{price}
+      p.card-error(role='alert')
+      p.result-message.hidden Payment succeeded, see the result in your 
+        a(href='' target="_blank") Stripe dashboard. Refresh the page to pay again.

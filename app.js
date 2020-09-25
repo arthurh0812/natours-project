@@ -16,6 +16,7 @@ const {
   backendErrorHandler,
   frontendErrorHandler,
 } = require('./controllers/errorController');
+const bookingRouter = require('./routes/bookingRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
@@ -152,6 +153,7 @@ app.use(async (request, response, next) => {
 // 2.) ROUTING
 app.use('/', viewRouter);
 app.use(frontendErrorHandler);
+app.use('/api/v1/bookings', bookingRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
@@ -159,12 +161,6 @@ app.use(backendErrorHandler);
 
 // all other invalid routes
 app.all('*', (request, response, next) => {
-  // const error = new Error(
-  //   `Could not find ${request.originalUrl} on this server!`
-  // );
-  // error.status = 'fail';
-  // error.statusCode = 404;
-
   next(
     new AppError(`Could not find ${request.originalUrl} on this server!`, 404)
   );

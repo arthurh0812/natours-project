@@ -133,7 +133,13 @@ exports.frontendErrorHandler = (error, request, response, next) => {
   if (process.env.NODE_ENV === 'development' && !state.alreadyError) {
     sendFrontendErrorDev(error, request, response);
   } else if (process.env.NODE_ENV === 'production' && !state.alreadyError) {
-    const errorResp = error;
+    let errorResp;
+
+    if (error.name === 'CastError') {
+      errorResp = handleCastErrorDB(error);
+    } else {
+      errorResp = error;
+    }
     sendFrontendErrorProd(errorResp, request, response);
   }
   state.alreadyError = true;

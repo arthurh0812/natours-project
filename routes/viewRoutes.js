@@ -40,4 +40,6 @@ router.post(
   viewController.updateUserData
 );
 
+router.get('/book/:tourId', viewController.paymentIntent);
+
 module.exports = router;
